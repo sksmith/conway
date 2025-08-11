@@ -145,6 +145,19 @@ security:
 	@echo "Running security scan..."
 	@$(GO) list -json -deps ./... | nancy sleuth
 
+# Test GoReleaser locally
+.PHONY: release-test
+release-test:
+	@echo "Testing GoReleaser configuration..."
+	@goreleaser check
+	@goreleaser release --snapshot --clean --skip=publish,docker
+
+# Install GoReleaser
+.PHONY: install-goreleaser
+install-goreleaser:
+	@echo "Installing GoReleaser..."
+	@$(GO) install github.com/goreleaser/goreleaser/v2@latest
+
 # Help target
 .PHONY: help
 help:
@@ -174,9 +187,11 @@ help:
 	@echo "🛠️  Setup:"
 	@echo "  deps         - Install dependencies"
 	@echo "  dev-deps     - Install development tools"
+	@echo "  install-goreleaser - Install GoReleaser"
 	@echo "  clean        - Clean build artifacts"
 	@echo ""
 	@echo "✅ Validation:"
 	@echo "  check-fmt    - Check if code is formatted"
+	@echo "  release-test - Test GoReleaser configuration locally"
 	@echo ""
 	@echo "  help         - Show this help message"

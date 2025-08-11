@@ -1,13 +1,15 @@
+version: 2
+
 project_name: conway
 
 before:
   hooks:
     - go mod tidy
-    - go generate ./...
 
 builds:
-  - id: examples
-    main: ./examples/basic
+  - id: examples-basic
+    main: ./main.go
+    dir: ./examples/basic
     binary: conway-basic
     env:
       - CGO_ENABLED=0
@@ -18,12 +20,10 @@ builds:
     goarch:
       - amd64
       - arm64
-    goarm:
-      - 6
-      - 7
 
-  - id: advanced
-    main: ./examples/advanced
+  - id: examples-advanced
+    main: ./main.go
+    dir: ./examples/advanced
     binary: conway-advanced
     env:
       - CGO_ENABLED=0
@@ -34,16 +34,13 @@ builds:
     goarch:
       - amd64
       - arm64
-    goarm:
-      - 6
-      - 7
 
 archives:
   - id: default
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
-    format_overrides:
-      - goos: windows
-        format: zip
+    files:
+      - LICENSE
+      - README.md
 
 checksum:
   name_template: 'checksums.txt'
@@ -57,12 +54,29 @@ changelog:
       - '^chore:'
       - '^ci:'
 
+dockers:
+  - image_templates:
+      - "ghcr.io/sksmith/{{ .ProjectName }}:{{ .Tag }}"
+      - "ghcr.io/sksmith/{{ .ProjectName }}:latest"
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    skip_push: auto
+    use: buildx
+
+snapshot:
+  version_template: "{{ .Tag }}-next"
+
 release:
   draft: false
   prerelease: auto
-  name_template: "Release v{{ .Version }}"
+  name_template: "Release {{ .Tag }}"
   header: |
-    ## Conway Polyhedron Notation Library v{{ .Version }}
+    ## Conway Polyhedron Notation Library {{ .Tag }}
     
     This release includes the Conway polyhedron notation library and example applications.
   footer: |
@@ -75,8 +89,12 @@ release:
     
     ### Binary releases:
     Download the appropriate binary for your platform from the assets below.
+    
+    ### Docker:
+    ```bash
+    docker pull ghcr.io/sksmith/conway:{{ .Tag }}
+    ```
 
   extra_files:
     - glob: ./README.md
-    - glob: ./CHANGES.md
     - glob: ./LICENSE
