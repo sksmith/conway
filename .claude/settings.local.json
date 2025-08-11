@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:en.wikipedia.org)",
+      "Bash(go mod:*)",
+      "Bash(go test:*)",
+      "Bash(go run:*)",
+      "Bash(del main.go)",
+      "Bash(rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(go fmt:*)",
+      "Bash(go vet:*)",
+      "Bash(go build:*)"
+    ],
+    "deny": []
+  }
+}

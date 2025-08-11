@@ -1,0 +1,82 @@
+project_name: conway
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: examples
+    main: ./examples/basic
+    binary: conway-basic
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    goarm:
+      - 6
+      - 7
+
+  - id: advanced
+    main: ./examples/advanced
+    binary: conway-advanced
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    goarm:
+      - 6
+      - 7
+
+archives:
+  - id: default
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^ci:'
+
+release:
+  draft: false
+  prerelease: auto
+  name_template: "Release v{{ .Version }}"
+  header: |
+    ## Conway Polyhedron Notation Library v{{ .Version }}
+    
+    This release includes the Conway polyhedron notation library and example applications.
+  footer: |
+    ## Installation
+    
+    ### As a Go library:
+    ```bash
+    go get github.com/sksmith/conway@{{ .Tag }}
+    ```
+    
+    ### Binary releases:
+    Download the appropriate binary for your platform from the assets below.
+
+  extra_files:
+    - glob: ./README.md
+    - glob: ./CHANGES.md
+    - glob: ./LICENSE
