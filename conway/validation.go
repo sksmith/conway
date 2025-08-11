@@ -6,11 +6,11 @@ import (
 )
 
 const (
-	// minFaceVertices is the minimum number of vertices required for a valid face
+	// minFaceVertices is the minimum number of vertices required for a valid face.
 	minFaceVertices = 4
 )
 
-// ValidationError represents an error in polyhedron validation
+// ValidationError represents an error in polyhedron validation.
 type ValidationError struct {
 	Type    string
 	Message string
@@ -20,22 +20,23 @@ func (ve ValidationError) Error() string {
 	return fmt.Sprintf("%s validation error: %s", ve.Type, ve.Message)
 }
 
-// ValidateManifold checks if the polyhedron is a valid 2-manifold
+// ValidateManifold checks if the polyhedron is a valid 2-manifold.
 // A valid 2-manifold requires:
 // - Each edge connects exactly 2 faces (except boundary edges which have 1)
-// - Each vertex's incident faces form a connected cycle
+// - Each vertex's incident faces form a connected cycle.
 // Thread-safe for concurrent access.
 func (p *Polyhedron) ValidateManifold() error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	// Check edge manifold property
+	// Check edge manifold property.
 	for _, edge := range p.Edges {
 		faceCount := len(edge.Faces)
+
 		if faceCount != 2 {
 			if faceCount == 1 {
-				// Boundary edge - this might be valid for open meshes
-				// For closed polyhedra, all edges should have exactly 2 faces
+				// Boundary edge - this might be valid for open meshes.
+				// For closed polyhedra, all edges should have exactly 2 faces.
 				continue
 			}
 
@@ -46,7 +47,7 @@ func (p *Polyhedron) ValidateManifold() error {
 		}
 	}
 
-	// Check vertex manifold property
+	// Check vertex manifold property.
 	for _, vertex := range p.Vertices {
 		if err := p.validateVertexManifold(vertex); err != nil {
 			return err
@@ -56,7 +57,7 @@ func (p *Polyhedron) ValidateManifold() error {
 	return nil
 }
 
-// validateVertexManifold checks if faces around a vertex form a proper manifold
+// validateVertexManifold checks if faces around a vertex form a proper manifold.
 func (p *Polyhedron) validateVertexManifold(vertex *Vertex) error {
 	if len(vertex.Faces) < 3 {
 		return ValidationError{
@@ -65,9 +66,10 @@ func (p *Polyhedron) validateVertexManifold(vertex *Vertex) error {
 		}
 	}
 
-	// Check that faces around vertex form a connected cycle
-	// This is a complex check that requires face ordering
-	orderedFaces := orderFacesAroundVertex(vertex)
+	// Check that faces around vertex form a connected cycle.
+	// This is a complex check that requires face ordering.
+	orderedFaces := OrderFacesAroundVertex(vertex)
+
 	if len(orderedFaces) != len(vertex.Faces) {
 		return ValidationError{
 			Type:    "Manifold",
@@ -78,7 +80,7 @@ func (p *Polyhedron) validateVertexManifold(vertex *Vertex) error {
 	return nil
 }
 
-// ValidatePlanarity checks if non-triangular faces are planar
+// ValidatePlanarity checks if non-triangular faces are planar.
 // Thread-safe for concurrent access.
 func (p *Polyhedron) ValidatePlanarity() error {
 	p.mu.RLock()
@@ -88,7 +90,7 @@ func (p *Polyhedron) ValidatePlanarity() error {
 
 	for _, face := range p.Faces {
 		if len(face.Vertices) <= 3 {
-			// Triangular faces are always planar
+			// Triangular faces are always planar.
 			continue
 		}
 
@@ -100,27 +102,32 @@ func (p *Polyhedron) ValidatePlanarity() error {
 	return nil
 }
 
-// validateFacePlanarity checks if a specific face is planar within tolerance
+// validateFacePlanarity checks if a specific face is planar within tolerance.
 func (p *Polyhedron) validateFacePlanarity(face *Face, tolerance float64) error {
 	if len(face.Vertices) < minFaceVertices {
 		return nil // Triangular faces are always planar
 	}
 
-	// Calculate the plane from the first three vertices
+	// Calculate the plane from the first three vertices.
 	v0 := face.Vertices[0].Position
+
 	v1 := face.Vertices[1].Position
+
 	v2 := face.Vertices[2].Position
 
-	// Calculate normal vector
+	// Calculate normal vector.
 	edge1 := v1.Sub(v0)
+
 	edge2 := v2.Sub(v0)
+
 	normal := edge1.Cross(edge2).Normalize()
 
-	// Check if all other vertices lie in the same plane
+	// Check if all other vertices lie in the same plane.
 	for i := 3; i < len(face.Vertices); i++ {
 		vi := face.Vertices[i].Position
-		// Calculate distance from point to plane
+		// Calculate distance from point to plane.
 		dist := math.Abs(normal.Dot(vi.Sub(v0)))
+
 		if dist > tolerance {
 			return ValidationError{
 				Type: "Planarity",
@@ -150,7 +157,7 @@ func (p *Polyhedron) ValidateWinding() error {
 	return nil
 }
 
-// validateFaceWinding checks if a face has correct winding order
+// validateFaceWinding checks if a face has correct winding order.
 func (p *Polyhedron) validateFaceWinding(face *Face, polyhedronCentroid Vector3) error {
 	if len(face.Vertices) < 3 {
 		return ValidationError{
@@ -160,12 +167,13 @@ func (p *Polyhedron) validateFaceWinding(face *Face, polyhedronCentroid Vector3)
 	}
 
 	faceNormal := face.Normal()
+
 	faceCentroid := face.Centroid()
 
-	// Vector from polyhedron center to face center
+	// Vector from polyhedron center to face center.
 	outwardVector := faceCentroid.Sub(polyhedronCentroid).Normalize()
 
-	// If face normal points outward, winding should be counter-clockwise when viewed from outside
+	// If face normal points outward, winding should be counter-clockwise when viewed from outside.
 	dotProduct := faceNormal.Dot(outwardVector)
 
 	if dotProduct < -0.1 { // Allow some tolerance
@@ -178,14 +186,15 @@ func (p *Polyhedron) validateFaceWinding(face *Face, polyhedronCentroid Vector3)
 	return nil
 }
 
-// ValidateTopology performs comprehensive topology validation
+// ValidateTopology performs comprehensive topology validation.
 // Thread-safe for concurrent access.
 func (p *Polyhedron) ValidateTopology() error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	// Check Euler characteristic
+	// Check Euler characteristic.
 	euler := len(p.Vertices) - len(p.Edges) + len(p.Faces) // Calculate inline to avoid deadlock
+
 	if euler != 2 {
 		return ValidationError{
 			Type:    "Topology",
@@ -193,7 +202,7 @@ func (p *Polyhedron) ValidateTopology() error {
 		}
 	}
 
-	// Check minimum vertex degree
+	// Check minimum vertex degree.
 	for _, vertex := range p.Vertices {
 		if vertex.Degree() < 3 {
 			return ValidationError{
@@ -203,7 +212,7 @@ func (p *Polyhedron) ValidateTopology() error {
 		}
 	}
 
-	// Check minimum face degree
+	// Check minimum face degree.
 	for _, face := range p.Faces {
 		if face.Degree() < 3 {
 			return ValidationError{
@@ -213,9 +222,10 @@ func (p *Polyhedron) ValidateTopology() error {
 		}
 	}
 
-	// Check edge-face connectivity
+	// Check edge-face connectivity.
 	for _, edge := range p.Edges {
 		faceCount := len(edge.Faces)
+
 		if faceCount == 0 || faceCount > 2 {
 			return ValidationError{
 				Type:    "Topology",
@@ -227,7 +237,7 @@ func (p *Polyhedron) ValidateTopology() error {
 	return nil
 }
 
-// ValidateGeometry performs geometric validation checks
+// ValidateGeometry performs geometric validation checks.
 // Thread-safe for concurrent access.
 func (p *Polyhedron) ValidateGeometry() error {
 	p.mu.RLock()
@@ -235,8 +245,10 @@ func (p *Polyhedron) ValidateGeometry() error {
 
 	// Check for degenerate edges (zero length)
 	const minEdgeLength = 1e-12
+
 	for _, edge := range p.Edges {
 		length := edge.Length()
+
 		if length < minEdgeLength {
 			return ValidationError{
 				Type:    "Geometry",
@@ -247,6 +259,7 @@ func (p *Polyhedron) ValidateGeometry() error {
 
 	// Check for degenerate faces (zero area)
 	const minFaceArea = 1e-12
+
 	for _, face := range p.Faces {
 		area := face.Area()
 		if area < minFaceArea {
@@ -260,7 +273,7 @@ func (p *Polyhedron) ValidateGeometry() error {
 	return nil
 }
 
-// ValidateComplete performs all validation checks
+// ValidateComplete performs all validation checks.
 func (p *Polyhedron) ValidateComplete() error {
 	if err := p.ValidateTopology(); err != nil {
 		return err

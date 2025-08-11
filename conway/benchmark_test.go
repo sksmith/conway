@@ -1,20 +1,22 @@
-package conway
+package conway_test
 
 import (
 	"testing"
+
+	"github.com/sksmith/conway/conway"
 )
 
-// BenchmarkPolyhedronCreation benchmarks the creation of seed polyhedra
+// BenchmarkPolyhedronCreation benchmarks the creation of seed polyhedra.
 func BenchmarkPolyhedronCreation(b *testing.B) {
 	benchmarks := []struct {
 		name string
-		fn   func() *Polyhedron
+		fn   func() *conway.Polyhedron
 	}{
-		{"Tetrahedron", Tetrahedron},
-		{"Cube", Cube},
-		{"Octahedron", Octahedron},
-		{"Dodecahedron", Dodecahedron},
-		{"Icosahedron", Icosahedron},
+		{"Tetrahedron", conway.Tetrahedron},
+		{"Cube", conway.Cube},
+		{"Octahedron", conway.Octahedron},
+		{"Dodecahedron", conway.Dodecahedron},
+		{"Icosahedron", conway.Icosahedron},
 	}
 
 	for _, bm := range benchmarks {
@@ -26,113 +28,113 @@ func BenchmarkPolyhedronCreation(b *testing.B) {
 	}
 }
 
-// BenchmarkDualOperation benchmarks the dual operation on various polyhedra
+// BenchmarkDualOperation benchmarks the dual operation on various polyhedra.
 func BenchmarkDualOperation(b *testing.B) {
 	benchmarks := []struct {
 		name string
-		poly *Polyhedron
+		poly *conway.Polyhedron
 	}{
-		{"Tetrahedron", Tetrahedron()},
-		{"Cube", Cube()},
-		{"Octahedron", Octahedron()},
-		{"Dodecahedron", Dodecahedron()},
-		{"Icosahedron", Icosahedron()},
+		{"Tetrahedron", conway.Tetrahedron()},
+		{"Cube", conway.Cube()},
+		{"Octahedron", conway.Octahedron()},
+		{"Dodecahedron", conway.Dodecahedron()},
+		{"Icosahedron", conway.Icosahedron()},
 	}
 
 	for _, bm := range benchmarks {
 		b.Run(bm.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				_ = Dual(bm.poly)
+				_ = conway.Dual(bm.poly)
 			}
 		})
 	}
 }
 
-// BenchmarkAmboOperation benchmarks the ambo operation
+// BenchmarkAmboOperation benchmarks the ambo operation.
 func BenchmarkAmboOperation(b *testing.B) {
 	benchmarks := []struct {
 		name string
-		poly *Polyhedron
+		poly *conway.Polyhedron
 	}{
-		{"Tetrahedron", Tetrahedron()},
-		{"Cube", Cube()},
-		{"Octahedron", Octahedron()},
-		{"Dodecahedron", Dodecahedron()},
-		{"Icosahedron", Icosahedron()},
+		{"Tetrahedron", conway.Tetrahedron()},
+		{"Cube", conway.Cube()},
+		{"Octahedron", conway.Octahedron()},
+		{"Dodecahedron", conway.Dodecahedron()},
+		{"Icosahedron", conway.Icosahedron()},
 	}
 
 	for _, bm := range benchmarks {
 		b.Run(bm.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				_ = Ambo(bm.poly)
+				_ = conway.Ambo(bm.poly)
 			}
 		})
 	}
 }
 
-// BenchmarkTruncateOperation benchmarks the truncate operation
+// BenchmarkTruncateOperation benchmarks the truncate operation.
 func BenchmarkTruncateOperation(b *testing.B) {
 	benchmarks := []struct {
 		name string
-		poly *Polyhedron
+		poly *conway.Polyhedron
 	}{
-		{"Tetrahedron", Tetrahedron()},
-		{"Cube", Cube()},
-		{"Octahedron", Octahedron()},
-		{"Dodecahedron", Dodecahedron()},
-		{"Icosahedron", Icosahedron()},
+		{"Tetrahedron", conway.Tetrahedron()},
+		{"Cube", conway.Cube()},
+		{"Octahedron", conway.Octahedron()},
+		{"Dodecahedron", conway.Dodecahedron()},
+		{"Icosahedron", conway.Icosahedron()},
 	}
 
 	for _, bm := range benchmarks {
 		b.Run(bm.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				_ = Truncate(bm.poly)
+				_ = conway.Truncate(bm.poly)
 			}
 		})
 	}
 }
 
-// BenchmarkKisOperation benchmarks the kis operation
+// BenchmarkKisOperation benchmarks the kis operation.
 func BenchmarkKisOperation(b *testing.B) {
 	benchmarks := []struct {
 		name string
-		poly *Polyhedron
+		poly *conway.Polyhedron
 	}{
-		{"Tetrahedron", Tetrahedron()},
-		{"Cube", Cube()},
-		{"Octahedron", Octahedron()},
+		{"Tetrahedron", conway.Tetrahedron()},
+		{"Cube", conway.Cube()},
+		{"Octahedron", conway.Octahedron()},
 	}
 
 	for _, bm := range benchmarks {
 		b.Run(bm.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				_ = Kis(bm.poly)
+				_ = conway.Kis(bm.poly)
 			}
 		})
 	}
 }
 
-// BenchmarkJoinOperation benchmarks the join operation
+// BenchmarkJoinOperation benchmarks the join operation.
 func BenchmarkJoinOperation(b *testing.B) {
 	benchmarks := []struct {
 		name string
-		poly *Polyhedron
+		poly *conway.Polyhedron
 	}{
-		{"Tetrahedron", Tetrahedron()},
-		{"Cube", Cube()},
-		{"Octahedron", Octahedron()},
+		{"Tetrahedron", conway.Tetrahedron()},
+		{"Cube", conway.Cube()},
+		{"Octahedron", conway.Octahedron()},
 	}
 
 	for _, bm := range benchmarks {
 		b.Run(bm.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				_ = Join(bm.poly)
+				_ = conway.Join(bm.poly)
 			}
 		})
 	}
 }
 
-// BenchmarkParser benchmarks the notation parser
+// BenchmarkParser benchmarks the notation parser.
 func BenchmarkParser(b *testing.B) {
 	testStrings := []string{
 		"T", "C", "O", "D", "I",
@@ -144,40 +146,40 @@ func BenchmarkParser(b *testing.B) {
 	for _, str := range testStrings {
 		b.Run(str, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				_, _ = Parse(str)
+				_, _ = conway.Parse(str)
 			}
 		})
 	}
 }
 
-// BenchmarkComplexOperations benchmarks complex operation chains
+// BenchmarkComplexOperations benchmarks complex operation chains.
 func BenchmarkComplexOperations(b *testing.B) {
-	cube := Cube()
+	cube := conway.Cube()
 
 	b.Run("dtakC", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, _ = Parse("dtakC")
+			_, _ = conway.Parse("dtakC")
 		}
 	})
 
 	b.Run("Manual_dtakC", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			k := Kis(cube)
-			a := Ambo(k)
-			t := Truncate(a)
-			_ = Dual(t)
+			k := conway.Kis(cube)
+			a := conway.Ambo(k)
+			t := conway.Truncate(a)
+			_ = conway.Dual(t)
 		}
 	})
 }
 
-// BenchmarkValidation benchmarks validation operations
+// BenchmarkValidation benchmarks validation operations.
 func BenchmarkValidation(b *testing.B) {
-	polyhedra := map[string]*Polyhedron{
-		"Tetrahedron":  Tetrahedron(),
-		"Cube":         Cube(),
-		"Octahedron":   Octahedron(),
-		"Dodecahedron": Dodecahedron(),
-		"Icosahedron":  Icosahedron(),
+	polyhedra := map[string]*conway.Polyhedron{
+		"Tetrahedron":  conway.Tetrahedron(),
+		"Cube":         conway.Cube(),
+		"Octahedron":   conway.Octahedron(),
+		"Dodecahedron": conway.Dodecahedron(),
+		"Icosahedron":  conway.Icosahedron(),
 	}
 
 	for name, poly := range polyhedra {
@@ -207,13 +209,13 @@ func BenchmarkValidation(b *testing.B) {
 	}
 }
 
-// BenchmarkEdgeLookup benchmarks the edge lookup optimization
+// BenchmarkEdgeLookup benchmarks the edge lookup optimization.
 func BenchmarkEdgeLookup(b *testing.B) {
-	// Create a polyhedron with many vertices for meaningful edge lookup benchmark
-	dodeca := Dodecahedron()
+	// Create a polyhedron with many vertices for meaningful edge lookup benchmark.
+	dodeca := conway.Dodecahedron()
 
-	// Get some vertices for lookup testing
-	var v1, v2 *Vertex
+	// Get some vertices for lookup testing.
+	var v1, v2 *conway.Vertex
 	for _, v := range dodeca.Vertices {
 		if v1 == nil {
 			v1 = v
@@ -225,28 +227,28 @@ func BenchmarkEdgeLookup(b *testing.B) {
 
 	b.Run("EdgeLookup_Find", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_ = dodeca.edgeLookup.Find(v1.ID, v2.ID)
+			_ = dodeca.FindEdge(v1.ID, v2.ID)
 		}
 	})
 
 	b.Run("AddEdge_WithLookup", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			poly := NewPolyhedron("test")
-			vertex1 := poly.AddVertex(Vector3{0, 0, 0})
-			vertex2 := poly.AddVertex(Vector3{1, 0, 0})
+			poly := conway.NewPolyhedron("test")
+			vertex1 := poly.AddVertex(conway.Vector3{0, 0, 0})
+			vertex2 := poly.AddVertex(conway.Vector3{1, 0, 0})
 			_ = poly.AddEdge(vertex1, vertex2)
 		}
 	})
 }
 
-// BenchmarkGeometryCalculations benchmarks geometric computations
+// BenchmarkGeometryCalculations benchmarks geometric computations.
 func BenchmarkGeometryCalculations(b *testing.B) {
-	polyhedra := map[string]*Polyhedron{
-		"Tetrahedron":  Tetrahedron(),
-		"Cube":         Cube(),
-		"Octahedron":   Octahedron(),
-		"Dodecahedron": Dodecahedron(),
-		"Icosahedron":  Icosahedron(),
+	polyhedra := map[string]*conway.Polyhedron{
+		"Tetrahedron":  conway.Tetrahedron(),
+		"Cube":         conway.Cube(),
+		"Octahedron":   conway.Octahedron(),
+		"Dodecahedron": conway.Dodecahedron(),
+		"Icosahedron":  conway.Icosahedron(),
 	}
 
 	for name, poly := range polyhedra {
@@ -277,12 +279,12 @@ func BenchmarkGeometryCalculations(b *testing.B) {
 	}
 }
 
-// BenchmarkFaceOperations benchmarks face-related operations
+// BenchmarkFaceOperations benchmarks face-related operations.
 func BenchmarkFaceOperations(b *testing.B) {
-	cube := Cube()
+	cube := conway.Cube()
 
-	// Get a face for testing
-	var testFace *Face
+	// Get a face for testing.
+	var testFace *conway.Face
 	for _, face := range cube.Faces {
 		testFace = face
 		break
@@ -307,31 +309,33 @@ func BenchmarkFaceOperations(b *testing.B) {
 	})
 }
 
-// BenchmarkMemoryUsage benchmarks memory allocation patterns
+// BenchmarkMemoryUsage benchmarks memory allocation patterns.
 func BenchmarkMemoryUsage(b *testing.B) {
 	b.Run("NewPolyhedron", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_ = NewPolyhedron("test")
+			_ = conway.NewPolyhedron("test")
 		}
 	})
 
 	b.Run("Clone", func(b *testing.B) {
-		cube := Cube()
+		cube := conway.Cube()
+
 		b.ResetTimer()
+
 		for i := 0; i < b.N; i++ {
 			_ = cube.Clone()
 		}
 	})
 }
 
-// BenchmarkScalability benchmarks operations on increasingly complex polyhedra
+// BenchmarkScalability benchmarks operations on increasingly complex polyhedra.
 func BenchmarkScalability(b *testing.B) {
-	// Create increasingly complex polyhedra through operations
-	base := Cube()
-	truncated := Truncate(base)     // More complex
-	compound := Truncate(truncated) // Even more complex
+	// Create increasingly complex polyhedra through operations.
+	base := conway.Cube()
+	truncated := conway.Truncate(base)     // More complex
+	compound := conway.Truncate(truncated) // Even more complex
 
-	polyhedra := map[string]*Polyhedron{
+	polyhedra := map[string]*conway.Polyhedron{
 		"Simple":  base,
 		"Medium":  truncated,
 		"Complex": compound,
@@ -340,7 +344,7 @@ func BenchmarkScalability(b *testing.B) {
 	for name, poly := range polyhedra {
 		b.Run(name+"_Dual", func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				_ = Dual(poly)
+				_ = conway.Dual(poly)
 			}
 		})
 

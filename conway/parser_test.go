@@ -1,11 +1,15 @@
-package conway
+package conway_test
 
 import (
 	"strings"
 	"testing"
+
+	"github.com/sksmith/conway/conway"
 )
 
 func TestParseValidNotations(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		notation string
 		valid    bool
@@ -32,10 +36,12 @@ func TestParseValidNotations(t *testing.T) {
 		{"xT", false},
 	}
 
-	parser := NewParser()
+	parser := conway.NewParser()
 
 	for _, test := range tests {
 		t.Run(test.notation, func(t *testing.T) {
+			t.Parallel()
+
 			result, err := parser.Parse(test.notation)
 
 			if test.valid {
@@ -43,10 +49,12 @@ func TestParseValidNotations(t *testing.T) {
 					t.Errorf("Expected valid notation %s, got error: %v", test.notation, err)
 					return
 				}
+
 				if result == nil {
 					t.Errorf("Expected result for valid notation %s", test.notation)
 					return
 				}
+
 				if !result.IsValid() {
 					t.Errorf("Result of %s is not a valid polyhedron", test.notation)
 				}
@@ -62,7 +70,9 @@ func TestParseValidNotations(t *testing.T) {
 }
 
 func TestParseOperationOrder(t *testing.T) {
-	parser := NewParser()
+	t.Parallel()
+
+	parser := conway.NewParser()
 
 	result, err := parser.Parse("dtC")
 	if err != nil {
@@ -79,9 +89,13 @@ func TestParseOperationOrder(t *testing.T) {
 }
 
 func TestParserHelperMethods(t *testing.T) {
-	parser := NewParser()
+	t.Parallel()
+
+	parser := conway.NewParser()
 
 	t.Run("GetAvailableOperations", func(t *testing.T) {
+		t.Parallel()
+
 		ops := parser.GetAvailableOperations()
 		expectedOps := []string{"d", "a", "t", "k", "j", "o", "e", "g", "s"}
 
@@ -93,6 +107,8 @@ func TestParserHelperMethods(t *testing.T) {
 	})
 
 	t.Run("GetAvailableSeeds", func(t *testing.T) {
+		t.Parallel()
+
 		seeds := parser.GetAvailableSeeds()
 		expectedSeeds := []string{"T", "C", "O", "D", "I"}
 
@@ -104,6 +120,8 @@ func TestParserHelperMethods(t *testing.T) {
 	})
 
 	t.Run("Validate", func(t *testing.T) {
+		t.Parallel()
+
 		if err := parser.Validate("dtC"); err != nil {
 			t.Errorf("Validation failed for valid notation: %v", err)
 		}
@@ -115,7 +133,9 @@ func TestParserHelperMethods(t *testing.T) {
 }
 
 func TestGlobalParseFunction(t *testing.T) {
-	result, err := Parse("tI")
+	t.Parallel()
+
+	result, err := conway.Parse("tI")
 	if err != nil {
 		t.Fatalf("Global Parse failed: %v", err)
 	}
@@ -126,31 +146,39 @@ func TestGlobalParseFunction(t *testing.T) {
 }
 
 func TestMustParse(t *testing.T) {
+	t.Parallel()
+
 	t.Run("ValidNotation", func(t *testing.T) {
+		t.Parallel()
+
 		defer func() {
 			if r := recover(); r != nil {
 				t.Errorf("MustParse panicked on valid notation: %v", r)
 			}
 		}()
 
-		result := MustParse("aC")
+		result := conway.MustParse("aC")
 		if !result.IsValid() {
 			t.Error("MustParse result is not valid")
 		}
 	})
 
 	t.Run("InvalidNotation", func(t *testing.T) {
+		t.Parallel()
+
 		defer func() {
 			if r := recover(); r == nil {
 				t.Error("MustParse should have panicked on invalid notation")
 			}
 		}()
 
-		MustParse("xT")
+		conway.MustParse("xT")
 	})
 }
 
 func TestComplexNotations(t *testing.T) {
+	t.Parallel()
+
 	complexNotations := []string{
 		"dtC",
 		"akT",
@@ -160,10 +188,12 @@ func TestComplexNotations(t *testing.T) {
 		"aeT",
 	}
 
-	parser := NewParser()
+	parser := conway.NewParser()
 
 	for _, notation := range complexNotations {
 		t.Run(notation, func(t *testing.T) {
+			t.Parallel()
+
 			result, err := parser.Parse(notation)
 			if err != nil {
 				t.Errorf("Failed to parse %s: %v", notation, err)

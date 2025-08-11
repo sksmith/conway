@@ -164,6 +164,28 @@ if err := poly.ValidateComplete(); err != nil {
 fmt.Printf("Euler characteristic: %d (should be 2)\n", poly.EulerCharacteristic())
 ```
 
+### Utility Functions
+
+```go
+// Find edges between vertices
+edge := poly.FindEdge(vertex1ID, vertex2ID)
+if edge != nil {
+    fmt.Printf("Edge found: %v\n", edge)
+}
+
+// Create edge lookup keys
+key := conway.MakeEdgeKey(v1ID, v2ID)
+
+// Calculate face normals
+normal, err := conway.CalculateFaceNormal(vertices)
+if err != nil {
+    log.Printf("Error calculating normal: %v", err)
+}
+
+// Ensure proper vertex ordering
+orderedVertices := conway.EnsureCounterClockwise(vertices, center)
+```
+
 ### Parser Capabilities
 
 ```go
@@ -209,15 +231,21 @@ if err := parser.Validate("dtC"); err != nil {
 - **Vertex**: Point in 3D space with connectivity information
 - **Edge**: Connection between two vertices with adjacent faces
 - **Face**: Polygonal face with ordered vertices and computed properties
-- **Polyhedron**: Complete polyhedron with thread-safe operations
+- **Polyhedron**: Complete polyhedron with thread-safe operations and edge lookup
 
 ### Performance Features
 
-- **O(1) Edge Lookup**: Hash-based edge lookup by vertex pairs
+- **O(1) Edge Lookup**: Hash-based edge lookup by vertex pairs using `FindEdge`
 - **Lazy Evaluation**: Properties computed on demand and cached
 - **Memory Optimization**: Efficient allocation and reuse
 - **Thread Safety**: Concurrent operations with proper locking
 - **Property Caching**: Expensive calculations cached automatically
+
+### Public API Utilities
+
+- **Edge Operations**: `FindEdge()` for O(1) edge lookup, `MakeEdgeKey()` for consistent edge identification
+- **Geometry Utilities**: `CalculateFaceNormal()` for robust normal computation using Newell's method
+- **Topology Helpers**: `EnsureCounterClockwise()` for proper face orientation
 
 ## 🚀 Performance
 

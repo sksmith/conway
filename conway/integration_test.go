@@ -1,14 +1,17 @@
-package conway
+package conway_test
 
 import (
 	"testing"
 
+	"github.com/sksmith/conway/conway"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// TestIntegrationBasicOperations tests basic operations work correctly together
+// TestIntegrationBasicOperations tests basic operations work correctly together.
 func TestIntegrationBasicOperations(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name          string
 		notation      string
@@ -35,16 +38,18 @@ func TestIntegrationBasicOperations(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			poly, err := Parse(tt.notation)
+			t.Parallel()
+
+			poly, err := conway.Parse(tt.notation)
 			require.NoError(t, err, "Failed to parse notation: %s", tt.notation)
 			require.NotNil(t, poly, "Polyhedron should not be nil")
 
-			// Test basic validity
+			// Test basic validity.
 			if tt.expectedValid {
 				assert.True(t, poly.IsValid(), "Polyhedron should be valid: %s", poly.Stats())
 			}
 
-			// Test Euler characteristic
+			// Test Euler characteristic.
 			assert.Equal(t, tt.expectedEuler, poly.EulerCharacteristic(),
 				"Euler characteristic mismatch for %s: %s", tt.notation, poly.Stats())
 
@@ -59,20 +64,24 @@ func TestIntegrationBasicOperations(t *testing.T) {
 	}
 }
 
-// TestIntegrationDualInvolution tests that dual is an involution (dd = identity)
+// TestIntegrationDualInvolution tests that dual is an involution (dd = identity).
 func TestIntegrationDualInvolution(t *testing.T) {
+	t.Parallel()
+
 	seeds := []string{"T", "C", "O", "D", "I"}
 
 	for _, seed := range seeds {
 		t.Run("Dual_involution_"+seed, func(t *testing.T) {
-			original, err := Parse(seed)
+			t.Parallel()
+
+			original, err := conway.Parse(seed)
 			require.NoError(t, err)
 
-			// Apply dual twice
-			_, err = Parse("d" + seed)
+			// Apply dual twice.
+			_, err = conway.Parse("d" + seed)
 			require.NoError(t, err)
 
-			dual2, err := Parse("dd" + seed)
+			dual2, err := conway.Parse("dd" + seed)
 			require.NoError(t, err)
 
 			// Should have same topology as original (vertices/faces swapped back)
@@ -86,8 +95,10 @@ func TestIntegrationDualInvolution(t *testing.T) {
 	}
 }
 
-// TestIntegrationParserEdgeCases tests parser with edge cases
+// TestIntegrationParserEdgeCases tests parser with edge cases.
 func TestIntegrationParserEdgeCases(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name        string
 		notation    string
@@ -106,7 +117,9 @@ func TestIntegrationParserEdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			poly, err := Parse(tt.notation)
+			t.Parallel()
+
+			poly, err := conway.Parse(tt.notation)
 			if tt.expectError {
 				assert.Error(t, err, "Should have failed for: %s", tt.notation)
 				assert.Nil(t, poly, "Polyhedron should be nil on error")
@@ -119,30 +132,33 @@ func TestIntegrationParserEdgeCases(t *testing.T) {
 	}
 }
 
-// TestIntegrationConcurrentOperations tests thread safety
+// TestIntegrationConcurrentOperations tests thread safety.
 func TestIntegrationConcurrentOperations(t *testing.T) {
+	t.Parallel()
+
 	const numGoroutines = 10
+
 	const numOperations = 100
 
-	// Channel to collect results
-	results := make(chan *Polyhedron, numGoroutines*numOperations)
+	// Channel to collect results.
+	results := make(chan *conway.Polyhedron, numGoroutines*numOperations)
 	errors := make(chan error, numGoroutines*numOperations)
 
-	// Launch multiple goroutines performing operations
+	// Launch multiple goroutines performing operations.
 	for i := 0; i < numGoroutines; i++ {
 		go func(goroutineID int) {
 			for j := 0; j < numOperations; j++ {
-				// Vary the operation based on goroutine ID and iteration
+				// Vary the operation based on goroutine ID and iteration.
 				operations := []string{"T", "dT", "tC", "aO", "kI", "dD"}
 				notation := operations[(goroutineID+j)%len(operations)]
 
-				poly, err := Parse(notation)
+				poly, err := conway.Parse(notation)
 				if err != nil {
 					errors <- err
 					continue
 				}
 
-				// Perform some operations on the polyhedron
+				// Perform some operations on the polyhedron.
 				_ = poly.Clone()
 				_ = poly.IsValid()
 				_ = poly.Stats()
@@ -153,7 +169,7 @@ func TestIntegrationConcurrentOperations(t *testing.T) {
 		}(i)
 	}
 
-	// Collect results
+	// Collect results.
 	successCount := 0
 	errorCount := 0
 
@@ -162,9 +178,11 @@ func TestIntegrationConcurrentOperations(t *testing.T) {
 		case poly := <-results:
 			assert.NotNil(t, poly)
 			assert.True(t, poly.IsValid())
+
 			successCount++
 		case err := <-errors:
 			assert.NoError(t, err, "Unexpected error in concurrent operations")
+
 			errorCount++
 		}
 	}
@@ -174,19 +192,23 @@ func TestIntegrationConcurrentOperations(t *testing.T) {
 	assert.Equal(t, 0, errorCount, "No errors should occur")
 }
 
-// TestIntegrationTopologyPreservation tests that operations preserve manifold properties
+// TestIntegrationTopologyPreservation tests that operations preserve manifold properties.
 func TestIntegrationTopologyPreservation(t *testing.T) {
+	t.Parallel()
+
 	operations := []string{"d", "a", "t", "k", "j"}
 	seeds := []string{"T", "C", "O"}
 
 	for _, seed := range seeds {
 		for _, op := range operations {
 			t.Run(seed+"_"+op, func(t *testing.T) {
+				t.Parallel()
+
 				notation := op + seed
-				poly, err := Parse(notation)
+				poly, err := conway.Parse(notation)
 				require.NoError(t, err, "Failed to parse: %s", notation)
 
-				// Check manifold properties
+				// Check manifold properties.
 				for _, edge := range poly.Edges {
 					assert.LessOrEqual(t, len(edge.Faces), 2,
 						"Edge should have at most 2 adjacent faces in %s", notation)
@@ -210,15 +232,17 @@ func TestIntegrationTopologyPreservation(t *testing.T) {
 	}
 }
 
-// TestIntegrationGeometryStats tests geometry statistics calculation
+// TestIntegrationGeometryStats tests geometry statistics calculation.
 func TestIntegrationGeometryStats(t *testing.T) {
-	poly, err := Parse("tC")
+	t.Parallel()
+
+	poly, err := conway.Parse("tC")
 	require.NoError(t, err)
 
 	stats := poly.CalculateGeometryStats()
 	require.NotNil(t, stats)
 
-	// Basic sanity checks
+	// Basic sanity checks.
 	assert.Greater(t, stats.MinEdgeLength, 0.0, "Min edge length should be positive")
 	assert.Greater(t, stats.MaxEdgeLength, 0.0, "Max edge length should be positive")
 	assert.GreaterOrEqual(t, stats.MaxEdgeLength, stats.MinEdgeLength,
@@ -231,7 +255,7 @@ func TestIntegrationGeometryStats(t *testing.T) {
 		"Max face area should be >= min face area")
 	assert.Greater(t, stats.AvgFaceArea, 0.0, "Average face area should be positive")
 
-	// Bounding box should be reasonable
+	// Bounding box should be reasonable.
 	assert.Less(t, stats.BoundingBox.Min.X, stats.BoundingBox.Max.X,
 		"Bounding box should have positive volume")
 	assert.Less(t, stats.BoundingBox.Min.Y, stats.BoundingBox.Max.Y,
@@ -240,20 +264,22 @@ func TestIntegrationGeometryStats(t *testing.T) {
 		"Bounding box should have positive volume")
 }
 
-// TestIntegrationMemoryStats tests memory usage statistics
+// TestIntegrationMemoryStats tests memory usage statistics.
 func TestIntegrationMemoryStats(t *testing.T) {
-	poly, err := Parse("kD")
+	t.Parallel()
+
+	poly, err := conway.Parse("kD")
 	require.NoError(t, err)
 
 	stats := poly.CalculateMemoryStats()
 	require.NotNil(t, stats)
 
-	// Basic sanity checks
+	// Basic sanity checks.
 	assert.Equal(t, len(poly.Vertices), stats.VertexCount)
 	assert.Equal(t, len(poly.Edges), stats.EdgeCount)
 	assert.Equal(t, len(poly.Faces), stats.FaceCount)
 
-	// Reference counts should be reasonable
+	// Reference counts should be reasonable.
 	assert.Greater(t, stats.TotalVertices, stats.VertexCount,
 		"Total vertex references should exceed unique vertices")
 	assert.Greater(t, stats.TotalEdges, stats.EdgeCount,
@@ -262,38 +288,42 @@ func TestIntegrationMemoryStats(t *testing.T) {
 		"Total face references should exceed unique faces")
 }
 
-// TestIntegrationNormalization tests polyhedron normalization
+// TestIntegrationNormalization tests polyhedron normalization.
 func TestIntegrationNormalization(t *testing.T) {
-	poly, err := Parse("C")
+	t.Parallel()
+
+	poly, err := conway.Parse("C")
 	require.NoError(t, err)
 
-	// Store original stats
+	// Store original stats.
 	_ = poly.Centroid()
 	_ = poly.CalculateGeometryStats()
 	originalVertexCount := len(poly.Vertices)
 	originalEdgeCount := len(poly.Edges)
 	originalFaceCount := len(poly.Faces)
 
-	// Normalize the polyhedron
+	// Normalize the polyhedron.
 	poly.Normalize()
 
-	// Check that it's centered at origin
+	// Check that it's centered at origin.
 	newCentroid := poly.Centroid()
 	assert.InDelta(t, 0.0, newCentroid.X, 1e-10, "Should be centered at origin")
 	assert.InDelta(t, 0.0, newCentroid.Y, 1e-10, "Should be centered at origin")
 	assert.InDelta(t, 0.0, newCentroid.Z, 1e-10, "Should be centered at origin")
 
-	// Check that max distance is 1
+	// Check that max distance is 1.
 	maxDist := 0.0
+
 	for _, v := range poly.Vertices {
 		dist := v.Position.Length()
 		if dist > maxDist {
 			maxDist = dist
 		}
 	}
+
 	assert.InDelta(t, 1.0, maxDist, 1e-10, "Max distance should be 1")
 
-	// Topology should be preserved
+	// Topology should be preserved.
 	assert.True(t, poly.IsValid(), "Normalization should preserve validity")
 	assert.Equal(t, originalVertexCount, len(poly.Vertices),
 		"Vertex count should be preserved")

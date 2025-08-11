@@ -1,12 +1,16 @@
-package conway
+package conway_test
 
 import (
 	"strings"
 	"testing"
+
+	"github.com/sksmith/conway/conway"
 )
 
 func TestValidationError(t *testing.T) {
-	err := ValidationError{
+	t.Parallel()
+
+	err := conway.ValidationError{
 		Type:    "test_error",
 		Message: "This is a test error message",
 	}
@@ -15,18 +19,21 @@ func TestValidationError(t *testing.T) {
 	if !strings.Contains(errorStr, "test_error") {
 		t.Errorf("Error string should contain error type, got: %s", errorStr)
 	}
+
 	if !strings.Contains(errorStr, "This is a test error message") {
 		t.Errorf("Error string should contain error message, got: %s", errorStr)
 	}
 }
 
 func TestValidationErrorCases(t *testing.T) {
-	p := NewPolyhedron("invalid")
+	t.Parallel()
 
-	v1 := p.AddVertex(Vector3{0, 0, 0})
-	v2 := p.AddVertex(Vector3{1, 0, 0})
+	p := conway.NewPolyhedron("invalid")
 
-	p.AddFace([]*Vertex{v1, v2})
+	v1 := p.AddVertex(conway.Vector3{0, 0, 0})
+	v2 := p.AddVertex(conway.Vector3{1, 0, 0})
+
+	p.AddFace([]*conway.Vertex{v1, v2})
 
 	err := p.ValidateComplete()
 	if err == nil {
@@ -40,18 +47,20 @@ func TestValidationErrorCases(t *testing.T) {
 }
 
 func TestValidateManifoldErrors(t *testing.T) {
-	p := NewPolyhedron("test")
+	t.Parallel()
 
-	v1 := p.AddVertex(Vector3{0, 0, 0})
-	v2 := p.AddVertex(Vector3{1, 0, 0})
-	v3 := p.AddVertex(Vector3{0, 1, 0})
-	v4 := p.AddVertex(Vector3{0, 0, 1})
+	p := conway.NewPolyhedron("test")
 
-	p.AddFace([]*Vertex{v1, v2, v3})
-	p.AddFace([]*Vertex{v1, v2, v4})
-	p.AddFace([]*Vertex{v2, v3, v4})
-	p.AddFace([]*Vertex{v1, v3, v4})
-	p.AddFace([]*Vertex{v1, v2, v3})
+	v1 := p.AddVertex(conway.Vector3{0, 0, 0})
+	v2 := p.AddVertex(conway.Vector3{1, 0, 0})
+	v3 := p.AddVertex(conway.Vector3{0, 1, 0})
+	v4 := p.AddVertex(conway.Vector3{0, 0, 1})
+
+	p.AddFace([]*conway.Vertex{v1, v2, v3})
+	p.AddFace([]*conway.Vertex{v1, v2, v4})
+	p.AddFace([]*conway.Vertex{v2, v3, v4})
+	p.AddFace([]*conway.Vertex{v1, v3, v4})
+	p.AddFace([]*conway.Vertex{v1, v2, v3})
 
 	err := p.ValidateManifold()
 	if err == nil {

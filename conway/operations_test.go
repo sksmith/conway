@@ -1,21 +1,29 @@
-package conway
+package conway_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/sksmith/conway/conway"
+)
 
 func TestDualOperation(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
-		poly func() *Polyhedron
+		poly func() *conway.Polyhedron
 	}{
-		{"Tetrahedron", Tetrahedron},
-		{"Cube", Cube},
-		{"Octahedron", Octahedron},
+		{"Tetrahedron", conway.Tetrahedron},
+		{"Cube", conway.Cube},
+		{"Octahedron", conway.Octahedron},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			original := test.poly()
-			dual := Dual(original)
+			dual := conway.Dual(original)
 
 			if !dual.IsValid() {
 				t.Errorf("Dual of %s is not valid", test.name)
@@ -26,7 +34,7 @@ func TestDualOperation(t *testing.T) {
 					test.name, dual.EulerCharacteristic())
 			}
 
-			doubleDual := Dual(dual)
+			doubleDual := conway.Dual(dual)
 
 			if len(doubleDual.Vertices) != len(original.Vertices) {
 				t.Errorf("Double dual vertex count mismatch: %d vs %d",
@@ -37,19 +45,23 @@ func TestDualOperation(t *testing.T) {
 }
 
 func TestAmboOperation(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
-		poly func() *Polyhedron
+		poly func() *conway.Polyhedron
 	}{
-		{"Tetrahedron", Tetrahedron},
-		{"Cube", Cube},
-		{"Octahedron", Octahedron},
+		{"Tetrahedron", conway.Tetrahedron},
+		{"Cube", conway.Cube},
+		{"Octahedron", conway.Octahedron},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			original := test.poly()
-			ambo := Ambo(original)
+			ambo := conway.Ambo(original)
 
 			if !ambo.IsValid() {
 				t.Errorf("Ambo of %s is not valid", test.name)
@@ -69,19 +81,23 @@ func TestAmboOperation(t *testing.T) {
 }
 
 func TestTruncateOperation(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
-		poly func() *Polyhedron
+		poly func() *conway.Polyhedron
 	}{
-		{"Tetrahedron", Tetrahedron},
-		{"Cube", Cube},
-		{"Octahedron", Octahedron},
+		{"Tetrahedron", conway.Tetrahedron},
+		{"Cube", conway.Cube},
+		{"Octahedron", conway.Octahedron},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			original := test.poly()
-			truncated := Truncate(original)
+			truncated := conway.Truncate(original)
 
 			if !truncated.IsValid() {
 				t.Errorf("Truncate of %s is not valid", test.name)
@@ -96,19 +112,23 @@ func TestTruncateOperation(t *testing.T) {
 }
 
 func TestKisOperation(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
-		poly func() *Polyhedron
+		poly func() *conway.Polyhedron
 	}{
-		{"Tetrahedron", Tetrahedron},
-		{"Cube", Cube},
-		{"Octahedron", Octahedron},
+		{"Tetrahedron", conway.Tetrahedron},
+		{"Cube", conway.Cube},
+		{"Octahedron", conway.Octahedron},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			original := test.poly()
-			kis := Kis(original)
+			kis := conway.Kis(original)
 
 			if !kis.IsValid() {
 				t.Errorf("Kis of %s is not valid", test.name)
@@ -129,19 +149,23 @@ func TestKisOperation(t *testing.T) {
 }
 
 func TestJoinOperation(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
-		poly func() *Polyhedron
+		poly func() *conway.Polyhedron
 	}{
-		{"Tetrahedron", Tetrahedron},
-		{"Cube", Cube},
-		{"Octahedron", Octahedron},
+		{"Tetrahedron", conway.Tetrahedron},
+		{"Cube", conway.Cube},
+		{"Octahedron", conway.Octahedron},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			original := test.poly()
-			joined := Join(original)
+			joined := conway.Join(original)
 
 			if !joined.IsValid() {
 				t.Errorf("Join of %s is not valid", test.name)
@@ -156,31 +180,41 @@ func TestJoinOperation(t *testing.T) {
 }
 
 func TestCompoundOperations(t *testing.T) {
-	original := Cube()
+	t.Parallel()
+
+	original := conway.Cube()
 
 	t.Run("Ortho", func(t *testing.T) {
-		ortho := Ortho(original)
+		t.Parallel()
+
+		ortho := conway.Ortho(original)
 		if !ortho.IsValid() {
 			t.Error("Ortho operation produced invalid polyhedron")
 		}
 	})
 
 	t.Run("Expand", func(t *testing.T) {
-		expand := Expand(original)
+		t.Parallel()
+
+		expand := conway.Expand(original)
 		if !expand.IsValid() {
 			t.Error("Expand operation produced invalid polyhedron")
 		}
 	})
 
 	t.Run("Gyro", func(t *testing.T) {
-		gyro := Gyro(original)
+		t.Parallel()
+
+		gyro := conway.Gyro(original)
 		if !gyro.IsValid() {
 			t.Error("Gyro operation produced invalid polyhedron")
 		}
 	})
 
 	t.Run("Snub", func(t *testing.T) {
-		snub := Snub(original)
+		t.Parallel()
+
+		snub := conway.Snub(original)
 		if !snub.IsValid() {
 			t.Error("Snub operation produced invalid polyhedron")
 		}
@@ -188,24 +222,28 @@ func TestCompoundOperations(t *testing.T) {
 }
 
 func TestOperationSymbols(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
-		op       Operation
+		op       conway.Operation
 		expected string
 	}{
-		{"Ambo", AmboOp{}, "a"},
-		{"Dual", DualOp{}, "d"},
-		{"Join", JoinOp{}, "j"},
-		{"Kis", KisOp{}, "k"},
-		{"Truncate", TruncateOp{}, "t"},
-		{"Ortho", OrthoOp{}, "o"},
-		{"Expand", ExpandOp{}, "e"},
-		{"Gyro", GyroOp{}, "g"},
-		{"Snub", SnubOp{}, "s"},
+		{"Ambo", conway.AmboOp{}, "a"},
+		{"Dual", conway.DualOp{}, "d"},
+		{"Join", conway.JoinOp{}, "j"},
+		{"Kis", conway.KisOp{}, "k"},
+		{"Truncate", conway.TruncateOp{}, "t"},
+		{"Ortho", conway.OrthoOp{}, "o"},
+		{"Expand", conway.ExpandOp{}, "e"},
+		{"Gyro", conway.GyroOp{}, "g"},
+		{"Snub", conway.SnubOp{}, "s"},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			symbol := test.op.Symbol()
 			if symbol != test.expected {
 				t.Errorf("Expected symbol %s for %s, got %s", test.expected, test.name, symbol)
@@ -215,24 +253,28 @@ func TestOperationSymbols(t *testing.T) {
 }
 
 func TestOperationNames(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
-		op       Operation
+		op       conway.Operation
 		expected string
 	}{
-		{"Ambo", AmboOp{}, "ambo"},
-		{"Dual", DualOp{}, "dual"},
-		{"Join", JoinOp{}, "join"},
-		{"Kis", KisOp{}, "kis"},
-		{"Truncate", TruncateOp{}, "truncate"},
-		{"Ortho", OrthoOp{}, "ortho"},
-		{"Expand", ExpandOp{}, "expand"},
-		{"Gyro", GyroOp{}, "gyro"},
-		{"Snub", SnubOp{}, "snub"},
+		{"Ambo", conway.AmboOp{}, "ambo"},
+		{"Dual", conway.DualOp{}, "dual"},
+		{"Join", conway.JoinOp{}, "join"},
+		{"Kis", conway.KisOp{}, "kis"},
+		{"Truncate", conway.TruncateOp{}, "truncate"},
+		{"Ortho", conway.OrthoOp{}, "ortho"},
+		{"Expand", conway.ExpandOp{}, "expand"},
+		{"Gyro", conway.GyroOp{}, "gyro"},
+		{"Snub", conway.SnubOp{}, "snub"},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			name := test.op.Name()
 			if name != test.expected {
 				t.Errorf("Expected name %s for operation, got %s", test.expected, name)

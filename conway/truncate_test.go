@@ -1,22 +1,27 @@
-package conway
+package conway_test
 
 import (
 	"testing"
 
+	"github.com/sksmith/conway/conway"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTruncateOpApply(t *testing.T) {
+	t.Parallel()
+
 	t.Run("EmptyPolyhedron", func(t *testing.T) {
-		empty := &Polyhedron{
+		t.Parallel()
+
+		empty := &conway.Polyhedron{
 			Name:     "empty",
-			Vertices: map[int]*Vertex{},
-			Edges:    map[int]*Edge{},
-			Faces:    map[int]*Face{},
+			Vertices: map[int]*conway.Vertex{},
+			Edges:    map[int]*conway.Edge{},
+			Faces:    map[int]*conway.Face{},
 		}
 
-		truncateOp := TruncateOp{}
+		truncateOp := conway.TruncateOp{}
 		result := truncateOp.Apply(empty)
 
 		assert.NotNil(t, result)
@@ -27,31 +32,35 @@ func TestTruncateOpApply(t *testing.T) {
 	})
 
 	t.Run("SingleTriangle", func(t *testing.T) {
-		// Create a simple triangle polyhedron
-		triangle := NewPolyhedron("triangle")
+		t.Parallel()
 
-		// Add vertices
-		v1 := triangle.AddVertex(Vector3{0, 0, 0})
-		v2 := triangle.AddVertex(Vector3{1, 0, 0})
-		v3 := triangle.AddVertex(Vector3{0.5, 1, 0})
+		// Create a simple triangle polyhedron.
+		triangle := conway.NewPolyhedron("triangle")
 
-		// Add face
-		triangle.AddFace([]*Vertex{v1, v2, v3})
+		// Add vertices.
+		v1 := triangle.AddVertex(conway.Vector3{0, 0, 0})
+		v2 := triangle.AddVertex(conway.Vector3{1, 0, 0})
+		v3 := triangle.AddVertex(conway.Vector3{0.5, 1, 0})
 
-		truncateOp := TruncateOp{}
+		// Add face.
+		triangle.AddFace([]*conway.Vertex{v1, v2, v3})
+
+		truncateOp := conway.TruncateOp{}
 		result := truncateOp.Apply(triangle)
 
 		assert.NotNil(t, result)
 		assert.Equal(t, "ttriangle", result.Name)
-		// Truncating a triangle should create multiple vertices
+		// Truncating a triangle should create multiple vertices.
 		assert.Greater(t, len(result.Vertices), 3)
 	})
 
 	t.Run("ValidTetrahedron", func(t *testing.T) {
-		tetra := Tetrahedron()
+		t.Parallel()
+
+		tetra := conway.Tetrahedron()
 		require.NotNil(t, tetra)
 
-		truncateOp := TruncateOp{}
+		truncateOp := conway.TruncateOp{}
 		result := truncateOp.Apply(tetra)
 
 		assert.NotNil(t, result)
@@ -59,16 +68,18 @@ func TestTruncateOpApply(t *testing.T) {
 		assert.Equal(t, 2, result.EulerCharacteristic())
 		assert.Equal(t, "tTetrahedron", result.Name)
 
-		// Truncated tetrahedron should have more vertices than original
+		// Truncated tetrahedron should have more vertices than original.
 		assert.Greater(t, len(result.Vertices), len(tetra.Vertices))
 		assert.Greater(t, len(result.Faces), len(tetra.Faces))
 	})
 
 	t.Run("ValidCube", func(t *testing.T) {
-		cube := Cube()
+		t.Parallel()
+
+		cube := conway.Cube()
 		require.NotNil(t, cube)
 
-		truncateOp := TruncateOp{}
+		truncateOp := conway.TruncateOp{}
 		result := truncateOp.Apply(cube)
 
 		assert.NotNil(t, result)
@@ -76,16 +87,18 @@ func TestTruncateOpApply(t *testing.T) {
 		assert.Equal(t, 2, result.EulerCharacteristic())
 		assert.Equal(t, "tCube", result.Name)
 
-		// Truncated cube should have specific properties
+		// Truncated cube should have specific properties.
 		assert.Greater(t, len(result.Vertices), len(cube.Vertices))
 		assert.Greater(t, len(result.Faces), len(cube.Faces))
 	})
 
 	t.Run("ValidOctahedron", func(t *testing.T) {
-		octa := Octahedron()
+		t.Parallel()
+
+		octa := conway.Octahedron()
 		require.NotNil(t, octa)
 
-		truncateOp := TruncateOp{}
+		truncateOp := conway.TruncateOp{}
 		result := truncateOp.Apply(octa)
 
 		assert.NotNil(t, result)
@@ -95,10 +108,12 @@ func TestTruncateOpApply(t *testing.T) {
 	})
 
 	t.Run("ValidDodecahedron", func(t *testing.T) {
-		dodeca := Dodecahedron()
+		t.Parallel()
+
+		dodeca := conway.Dodecahedron()
 		require.NotNil(t, dodeca)
 
-		truncateOp := TruncateOp{}
+		truncateOp := conway.TruncateOp{}
 		result := truncateOp.Apply(dodeca)
 
 		assert.NotNil(t, result)
@@ -106,16 +121,18 @@ func TestTruncateOpApply(t *testing.T) {
 		assert.Equal(t, 2, result.EulerCharacteristic())
 		assert.Equal(t, "tDodecahedron", result.Name)
 
-		// Truncated dodecahedron (soccer ball) is a well-known shape
+		// Truncated dodecahedron (soccer ball) is a well-known shape.
 		assert.Greater(t, len(result.Vertices), 50)
 		assert.Greater(t, len(result.Faces), 25)
 	})
 
 	t.Run("ValidIcosahedron", func(t *testing.T) {
-		icosa := Icosahedron()
+		t.Parallel()
+
+		icosa := conway.Icosahedron()
 		require.NotNil(t, icosa)
 
-		truncateOp := TruncateOp{}
+		truncateOp := conway.TruncateOp{}
 		result := truncateOp.Apply(icosa)
 
 		assert.NotNil(t, result)
@@ -125,10 +142,12 @@ func TestTruncateOpApply(t *testing.T) {
 	})
 
 	t.Run("EdgeVertexKeyGeneration", func(t *testing.T) {
-		// Test the edge vertex key generation function
-		key1 := edgeVertexKey(1, 2)
-		key2 := edgeVertexKey(2, 1)
-		key3 := edgeVertexKey(1, 2)
+		t.Parallel()
+
+		// Test the edge vertex key generation function.
+		key1 := conway.EdgeVertexKey(1, 2)
+		key2 := conway.EdgeVertexKey(2, 1)
+		key3 := conway.EdgeVertexKey(1, 2)
 
 		assert.NotEqual(t, key1, key2) // Different order should give different keys
 		assert.Equal(t, key1, key3)    // Same parameters should give same key
@@ -136,11 +155,13 @@ func TestTruncateOpApply(t *testing.T) {
 	})
 
 	t.Run("TruncationFactorBehavior", func(t *testing.T) {
-		// Test that truncation creates new vertices at the expected positions
-		tetra := Tetrahedron()
+		t.Parallel()
+
+		// Test that truncation creates new vertices at the expected positions.
+		tetra := conway.Tetrahedron()
 		require.NotNil(t, tetra)
 
-		truncateOp := TruncateOp{}
+		truncateOp := conway.TruncateOp{}
 		result := truncateOp.Apply(tetra)
 
 		// Check that all vertices are at reasonable positions (not at original positions)
@@ -155,11 +176,13 @@ func TestTruncateOpApply(t *testing.T) {
 	})
 
 	t.Run("FaceVertexValidation", func(t *testing.T) {
-		// Test that all generated faces have at least 3 vertices
-		cube := Cube()
+		t.Parallel()
+
+		// Test that all generated faces have at least 3 vertices.
+		cube := conway.Cube()
 		require.NotNil(t, cube)
 
-		truncateOp := TruncateOp{}
+		truncateOp := conway.TruncateOp{}
 		result := truncateOp.Apply(cube)
 
 		for _, face := range result.Faces {
@@ -171,11 +194,13 @@ func TestTruncateOpApply(t *testing.T) {
 	})
 
 	t.Run("VertexDegreeConsistency", func(t *testing.T) {
-		// Test vertex degree consistency after truncation
-		octa := Octahedron()
+		t.Parallel()
+
+		// Test vertex degree consistency after truncation.
+		octa := conway.Octahedron()
 		require.NotNil(t, octa)
 
-		truncateOp := TruncateOp{}
+		truncateOp := conway.TruncateOp{}
 		result := truncateOp.Apply(octa)
 
 		for _, vertex := range result.Vertices {
@@ -188,12 +213,16 @@ func TestTruncateOpApply(t *testing.T) {
 }
 
 func TestTruncateFunction(t *testing.T) {
+	t.Parallel()
+
 	t.Run("ConvenienceFunction", func(t *testing.T) {
-		cube := Cube()
+		t.Parallel()
+
+		cube := conway.Cube()
 		require.NotNil(t, cube)
 
-		// Test the convenience function
-		result := Truncate(cube)
+		// Test the convenience function.
+		result := conway.Truncate(cube)
 
 		assert.NotNil(t, result)
 		assert.True(t, result.IsValid())
@@ -202,13 +231,19 @@ func TestTruncateFunction(t *testing.T) {
 }
 
 func TestTruncateOpMethods(t *testing.T) {
+	t.Parallel()
+
 	t.Run("Symbol", func(t *testing.T) {
-		op := TruncateOp{}
+		t.Parallel()
+
+		op := conway.TruncateOp{}
 		assert.Equal(t, "t", op.Symbol())
 	})
 
 	t.Run("Name", func(t *testing.T) {
-		op := TruncateOp{}
+		t.Parallel()
+
+		op := conway.TruncateOp{}
 		assert.Equal(t, "truncate", op.Name())
 	})
 }

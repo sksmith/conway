@@ -1,13 +1,17 @@
-package conway
+package conway_test
 
 import (
 	"math"
 	"testing"
+
+	"github.com/sksmith/conway/conway"
 )
 
 func TestVector3Operations(t *testing.T) {
-	v1 := Vector3{1, 2, 3}
-	v2 := Vector3{4, 5, 6}
+	t.Parallel()
+
+	v1 := conway.Vector3{1, 2, 3}
+	v2 := conway.Vector3{4, 5, 6}
 
 	add := v1.Add(v2)
 	if add.X != 5 || add.Y != 7 || add.Z != 9 {
@@ -29,24 +33,26 @@ func TestVector3Operations(t *testing.T) {
 		t.Errorf("Dot failed: got %f, expected 32", dot)
 	}
 
-	cross := Vector3{1, 0, 0}.Cross(Vector3{0, 1, 0})
+	cross := conway.Vector3{1, 0, 0}.Cross(conway.Vector3{0, 1, 0})
 	if cross.X != 0 || cross.Y != 0 || cross.Z != 1 {
 		t.Errorf("Cross failed: got %v, expected {0, 0, 1}", cross)
 	}
 }
 
 func TestPolyhedronBasics(t *testing.T) {
-	p := NewPolyhedron("test")
+	t.Parallel()
 
-	v1 := p.AddVertex(Vector3{0, 0, 0})
-	v2 := p.AddVertex(Vector3{1, 0, 0})
-	v3 := p.AddVertex(Vector3{0, 1, 0})
+	p := conway.NewPolyhedron("test")
+
+	v1 := p.AddVertex(conway.Vector3{0, 0, 0})
+	v2 := p.AddVertex(conway.Vector3{1, 0, 0})
+	v3 := p.AddVertex(conway.Vector3{0, 1, 0})
 
 	p.AddEdge(v1, v2)
 	p.AddEdge(v2, v3)
 	p.AddEdge(v3, v1)
 
-	f := p.AddFace([]*Vertex{v1, v2, v3})
+	f := p.AddFace([]*conway.Vertex{v1, v2, v3})
 
 	if len(p.Vertices) != 3 {
 		t.Errorf("Expected 3 vertices, got %d", len(p.Vertices))
@@ -70,7 +76,9 @@ func TestPolyhedronBasics(t *testing.T) {
 }
 
 func TestPolyhedronClone(t *testing.T) {
-	original := Tetrahedron()
+	t.Parallel()
+
+	original := conway.Tetrahedron()
 	clone := original.Clone()
 
 	if len(clone.Vertices) != len(original.Vertices) {
@@ -94,21 +102,26 @@ func TestPolyhedronClone(t *testing.T) {
 }
 
 func TestEulerCharacteristic(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
-		poly     func() *Polyhedron
+		poly     func() *conway.Polyhedron
 		expected int
 	}{
-		{"Tetrahedron", Tetrahedron, 2},
-		{"Cube", Cube, 2},
-		{"Octahedron", Octahedron, 2},
-		{"Dodecahedron", Dodecahedron, 2},
-		{"Icosahedron", Icosahedron, 2},
+		{"conway.Tetrahedron", conway.Tetrahedron, 2},
+		{"conway.Cube", conway.Cube, 2},
+		{"conway.Octahedron", conway.Octahedron, 2},
+		{"conway.Dodecahedron", conway.Dodecahedron, 2},
+		{"conway.Icosahedron", conway.Icosahedron, 2},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			p := test.poly()
+
 			chi := p.EulerCharacteristic()
 			if chi != test.expected {
 				t.Errorf("%s Euler characteristic: got %d, expected %d",
@@ -119,7 +132,9 @@ func TestEulerCharacteristic(t *testing.T) {
 }
 
 func TestVertexRemoval(t *testing.T) {
-	p := Tetrahedron()
+	t.Parallel()
+
+	p := conway.Tetrahedron()
 	originalVertexCount := len(p.Vertices)
 	originalEdgeCount := len(p.Edges)
 	originalFaceCount := len(p.Faces)
@@ -144,10 +159,12 @@ func TestVertexRemoval(t *testing.T) {
 }
 
 func TestNormalization(t *testing.T) {
-	p := Cube()
+	t.Parallel()
+
+	p := conway.Cube()
 
 	for _, v := range p.Vertices {
-		v.Position = v.Position.Add(Vector3{10, 20, 30})
+		v.Position = v.Position.Add(conway.Vector3{10, 20, 30})
 	}
 
 	p.Normalize()
@@ -158,6 +175,7 @@ func TestNormalization(t *testing.T) {
 	}
 
 	maxDist := 0.0
+
 	for _, v := range p.Vertices {
 		dist := v.Position.Length()
 		if dist > maxDist {
@@ -171,10 +189,12 @@ func TestNormalization(t *testing.T) {
 }
 
 func TestRemoveEdge(t *testing.T) {
-	p := NewPolyhedron("test")
-	v1 := p.AddVertex(Vector3{0, 0, 0})
-	v2 := p.AddVertex(Vector3{1, 0, 0})
-	v3 := p.AddVertex(Vector3{0, 1, 0})
+	t.Parallel()
+
+	p := conway.NewPolyhedron("test")
+	v1 := p.AddVertex(conway.Vector3{0, 0, 0})
+	v2 := p.AddVertex(conway.Vector3{1, 0, 0})
+	v3 := p.AddVertex(conway.Vector3{0, 1, 0})
 
 	p.AddEdge(v1, v2)
 	e2 := p.AddEdge(v2, v3)
@@ -191,26 +211,30 @@ func TestRemoveEdge(t *testing.T) {
 	}
 
 	found := false
+
 	for _, e := range p.Edges {
 		if e == e2 {
 			found = true
 			break
 		}
 	}
+
 	if found {
 		t.Error("Removed edge still found in polyhedron")
 	}
 }
 
 func TestRemoveFace(t *testing.T) {
-	p := NewPolyhedron("test")
-	v1 := p.AddVertex(Vector3{0, 0, 0})
-	v2 := p.AddVertex(Vector3{1, 0, 0})
-	v3 := p.AddVertex(Vector3{0, 1, 0})
-	v4 := p.AddVertex(Vector3{0, 0, 1})
+	t.Parallel()
 
-	f1 := p.AddFace([]*Vertex{v1, v2, v3})
-	p.AddFace([]*Vertex{v1, v3, v4})
+	p := conway.NewPolyhedron("test")
+	v1 := p.AddVertex(conway.Vector3{0, 0, 0})
+	v2 := p.AddVertex(conway.Vector3{1, 0, 0})
+	v3 := p.AddVertex(conway.Vector3{0, 1, 0})
+	v4 := p.AddVertex(conway.Vector3{0, 0, 1})
+
+	f1 := p.AddFace([]*conway.Vertex{v1, v2, v3})
+	p.AddFace([]*conway.Vertex{v1, v3, v4})
 
 	if len(p.Faces) != 2 {
 		t.Errorf("Expected 2 faces, got %d", len(p.Faces))
@@ -223,19 +247,23 @@ func TestRemoveFace(t *testing.T) {
 	}
 
 	found := false
+
 	for _, f := range p.Faces {
 		if f == f1 {
 			found = true
 			break
 		}
 	}
+
 	if found {
 		t.Error("Removed face still found in polyhedron")
 	}
 }
 
 func TestNormalizeZeroLengthVector(t *testing.T) {
-	v := Vector3{0, 0, 0}
+	t.Parallel()
+
+	v := conway.Vector3{0, 0, 0}
 	normalized := v.Normalize()
 
 	if normalized.X != 0 || normalized.Y != 0 || normalized.Z != 0 {
@@ -244,10 +272,12 @@ func TestNormalizeZeroLengthVector(t *testing.T) {
 }
 
 func TestEdgeOtherVertex(t *testing.T) {
-	p := NewPolyhedron("test")
-	v1 := p.AddVertex(Vector3{0, 0, 0})
-	v2 := p.AddVertex(Vector3{1, 0, 0})
-	v3 := p.AddVertex(Vector3{0, 1, 0})
+	t.Parallel()
+
+	p := conway.NewPolyhedron("test")
+	v1 := p.AddVertex(conway.Vector3{0, 0, 0})
+	v2 := p.AddVertex(conway.Vector3{1, 0, 0})
+	v3 := p.AddVertex(conway.Vector3{0, 1, 0})
 
 	edge := p.AddEdge(v1, v2)
 
@@ -268,20 +298,22 @@ func TestEdgeOtherVertex(t *testing.T) {
 }
 
 func TestFaceNormalEdgeCases(t *testing.T) {
-	p := NewPolyhedron("test")
+	t.Parallel()
 
-	v1 := p.AddVertex(Vector3{0, 0, 0})
-	v2 := p.AddVertex(Vector3{1, 0, 0})
+	p := conway.NewPolyhedron("test")
 
-	face := p.AddFace([]*Vertex{v1, v2})
+	v1 := p.AddVertex(conway.Vector3{0, 0, 0})
+	v2 := p.AddVertex(conway.Vector3{1, 0, 0})
+
+	face := p.AddFace([]*conway.Vertex{v1, v2})
 	normal := face.Normal()
 
 	if normal.Length() != 0 {
 		t.Error("Face with fewer than 3 vertices should have zero normal")
 	}
 
-	v3 := p.AddVertex(Vector3{0, 0, 0})
-	face2 := p.AddFace([]*Vertex{v1, v2, v3})
+	v3 := p.AddVertex(conway.Vector3{0, 0, 0})
+	face2 := p.AddFace([]*conway.Vertex{v1, v2, v3})
 	normal2 := face2.Normal()
 
 	if normal2.Length() != 0 {

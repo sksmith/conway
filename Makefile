@@ -33,7 +33,7 @@ fmt:
 .PHONY: lint
 lint:
 	@echo "Running linter..."
-	@$(GOLINT) run ./...
+	@$(GOLINT) run --fix --out-format=colored-line-number --timeout=5m ./...
 
 # Run tests
 .PHONY: test
@@ -115,7 +115,7 @@ concurrency-test:
 
 # Run all pre-commit checks (essential only)
 .PHONY: pre-commit
-pre-commit: check-fmt vet staticcheck lint-critical test concurrency-test build
+pre-commit: fmt check-fmt vet staticcheck lint test concurrency-test build
 	@echo "✅ All pre-commit checks passed!"
 
 # Run all checks (used by CI)
@@ -131,7 +131,7 @@ quick-check: check-fmt vet staticcheck
 .PHONY: lint-critical
 lint-critical:
 	@echo "Running critical linter checks..."
-	@$(GOLINT) run --config .golangci-critical.yml ./...
+	@$(GOLINT) run --fix --config .golangci-critical.yml ./...
 
 # Check if code is properly formatted
 .PHONY: check-fmt

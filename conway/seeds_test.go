@@ -1,24 +1,32 @@
-package conway
+package conway_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/sksmith/conway/conway"
+)
 
 func TestSeedPolyhedra(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
-		poly func() *Polyhedron
+		poly func() *conway.Polyhedron
 		V    int
 		E    int
 		F    int
 	}{
-		{"Tetrahedron", Tetrahedron, 4, 6, 4},
-		{"Cube", Cube, 8, 12, 6},
-		{"Octahedron", Octahedron, 6, 12, 8},
-		{"Dodecahedron", Dodecahedron, 20, 30, 12},
-		{"Icosahedron", Icosahedron, 12, 30, 20},
+		{"conway.Tetrahedron", conway.Tetrahedron, 4, 6, 4},
+		{"conway.Cube", conway.Cube, 8, 12, 6},
+		{"conway.Octahedron", conway.Octahedron, 6, 12, 8},
+		{"conway.Dodecahedron", conway.Dodecahedron, 20, 30, 12},
+		{"conway.Icosahedron", conway.Icosahedron, 12, 30, 20},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			p := test.poly()
 
 			if len(p.Vertices) != test.V {
@@ -44,6 +52,8 @@ func TestSeedPolyhedra(t *testing.T) {
 }
 
 func TestGetSeed(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		symbol   string
 		expected bool
@@ -59,9 +69,11 @@ func TestGetSeed(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.symbol, func(t *testing.T) {
-			poly := GetSeed(test.symbol)
+			t.Parallel()
+
+			poly := conway.GetSeed(test.symbol)
 			if (poly != nil) != test.expected {
-				t.Errorf("GetSeed(%s): got %v, expected existence %v",
+				t.Errorf("conway.GetSeed(%s): got %v, expected existence %v",
 					test.symbol, poly != nil, test.expected)
 			}
 		})
@@ -69,13 +81,17 @@ func TestGetSeed(t *testing.T) {
 }
 
 func TestSeedValidity(t *testing.T) {
+	t.Parallel()
+
 	seeds := []string{"T", "C", "O", "D", "I"}
 
 	for _, symbol := range seeds {
 		t.Run(symbol, func(t *testing.T) {
-			p := GetSeed(symbol)
+			t.Parallel()
+
+			p := conway.GetSeed(symbol)
 			if p == nil {
-				t.Fatalf("GetSeed(%s) returned nil", symbol)
+				t.Fatalf("conway.GetSeed(%s) returned nil", symbol)
 			}
 
 			if !p.IsValid() {
@@ -91,50 +107,58 @@ func TestSeedValidity(t *testing.T) {
 }
 
 func TestSeedGeometry(t *testing.T) {
-	t.Run("Tetrahedron", func(t *testing.T) {
-		p := Tetrahedron()
+	t.Parallel()
+
+	t.Run("conway.Tetrahedron", func(t *testing.T) {
+		t.Parallel()
+
+		p := conway.Tetrahedron()
 
 		for _, f := range p.Faces {
 			if f.Degree() != 3 {
-				t.Errorf("Tetrahedron face should have 3 vertices, got %d", f.Degree())
+				t.Errorf("conway.Tetrahedron face should have 3 vertices, got %d", f.Degree())
 			}
 		}
 
 		for _, v := range p.Vertices {
 			if v.Degree() != 3 {
-				t.Errorf("Tetrahedron vertex should have degree 3, got %d", v.Degree())
+				t.Errorf("conway.Tetrahedron vertex should have degree 3, got %d", v.Degree())
 			}
 		}
 	})
 
-	t.Run("Cube", func(t *testing.T) {
-		p := Cube()
+	t.Run("conway.Cube", func(t *testing.T) {
+		t.Parallel()
+
+		p := conway.Cube()
 
 		for _, f := range p.Faces {
 			if f.Degree() != 4 {
-				t.Errorf("Cube face should have 4 vertices, got %d", f.Degree())
+				t.Errorf("conway.Cube face should have 4 vertices, got %d", f.Degree())
 			}
 		}
 
 		for _, v := range p.Vertices {
 			if v.Degree() != 3 {
-				t.Errorf("Cube vertex should have degree 3, got %d", v.Degree())
+				t.Errorf("conway.Cube vertex should have degree 3, got %d", v.Degree())
 			}
 		}
 	})
 
-	t.Run("Octahedron", func(t *testing.T) {
-		p := Octahedron()
+	t.Run("conway.Octahedron", func(t *testing.T) {
+		t.Parallel()
+
+		p := conway.Octahedron()
 
 		for _, f := range p.Faces {
 			if f.Degree() != 3 {
-				t.Errorf("Octahedron face should have 3 vertices, got %d", f.Degree())
+				t.Errorf("conway.Octahedron face should have 3 vertices, got %d", f.Degree())
 			}
 		}
 
 		for _, v := range p.Vertices {
 			if v.Degree() != 4 {
-				t.Errorf("Octahedron vertex should have degree 4, got %d", v.Degree())
+				t.Errorf("conway.Octahedron vertex should have degree 4, got %d", v.Degree())
 			}
 		}
 	})

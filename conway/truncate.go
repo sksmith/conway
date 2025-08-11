@@ -3,7 +3,7 @@ package conway
 import "fmt"
 
 const (
-	// defaultTruncateFactor is the standard truncation factor (1/3)
+	// defaultTruncateFactor is the standard truncation factor (1/3).
 	defaultTruncateFactor = 1.0 / 3.0
 )
 
@@ -17,20 +17,26 @@ func (t TruncateOp) Name() string {
 	return "truncate"
 }
 
-// createTruncatedEdgeVertices creates new vertices along each edge for truncation
-func createTruncatedEdgeVertices(p *Polyhedron, truncFactor float64) (map[string]*Vertex, *Polyhedron) {
+// createTruncatedEdgeVertices creates new vertices along each edge for truncation.
+func createTruncatedEdgeVertices(p *Polyhedron, truncFactor float64) (
+	map[string]*Vertex, *Polyhedron,
+) {
 	trunc := NewPolyhedron("t" + p.Name)
+
 	edgeVertices := make(map[string]*Vertex)
 
 	for _, edge := range p.Edges {
 		v1Pos := edge.V1.Position
+
 		v2Pos := edge.V2.Position
 
 		newV1Pos := v1Pos.Add(v2Pos.Sub(v1Pos).Scale(truncFactor))
+
 		newV2Pos := v1Pos.Add(v2Pos.Sub(v1Pos).Scale(1 - truncFactor))
 
-		key1 := edgeVertexKey(edge.ID, edge.V1.ID)
-		key2 := edgeVertexKey(edge.ID, edge.V2.ID)
+		key1 := EdgeVertexKey(edge.ID, edge.V1.ID)
+
+		key2 := EdgeVertexKey(edge.ID, edge.V2.ID)
 
 		edgeVertices[key1] = trunc.AddVertex(newV1Pos)
 		edgeVertices[key2] = trunc.AddVertex(newV2Pos)
@@ -39,11 +45,13 @@ func createTruncatedEdgeVertices(p *Polyhedron, truncFactor float64) (map[string
 	return edgeVertices, trunc
 }
 
-// findAdjacentEdges finds the edges connecting a vertex to its previous and next neighbors in a face
+// findAdjacentEdges finds the edges connecting a vertex to its previous and next neighbors in a face.
 func findAdjacentEdges(vertex, prevVertex, nextVertex *Vertex) (*Edge, *Edge) {
 	var edge1, edge2 *Edge
+
 	for _, e := range vertex.Edges {
 		other := e.OtherVertex(vertex)
+
 		if other != nil {
 			if other.ID == prevVertex.ID {
 				edge1 = e
@@ -56,23 +64,26 @@ func findAdjacentEdges(vertex, prevVertex, nextVertex *Vertex) (*Edge, *Edge) {
 	return edge1, edge2
 }
 
-// addTruncatedFaceVertices adds vertices for a truncated face
+// addTruncatedFaceVertices adds vertices for a truncated face.
 func addTruncatedFaceVertices(face *Face, edgeVertices map[string]*Vertex) []*Vertex {
 	newFaceVertices := allocateVertexSlice(len(face.Vertices) * 2)
 
 	for i, vertex := range face.Vertices {
 		prevVertex := face.Vertices[(i-1+len(face.Vertices))%len(face.Vertices)]
+
 		nextVertex := face.Vertices[(i+1)%len(face.Vertices)]
 
 		edge1, edge2 := findAdjacentEdges(vertex, prevVertex, nextVertex)
 
 		if edge1 != nil && edge2 != nil {
-			key1 := edgeVertexKey(edge1.ID, vertex.ID)
-			key2 := edgeVertexKey(edge2.ID, vertex.ID)
+			key1 := EdgeVertexKey(edge1.ID, vertex.ID)
+
+			key2 := EdgeVertexKey(edge2.ID, vertex.ID)
 
 			if v1, ok := edgeVertices[key1]; ok {
 				newFaceVertices = append(newFaceVertices, v1)
 			}
+
 			if v2, ok := edgeVertices[key2]; ok {
 				newFaceVertices = append(newFaceVertices, v2)
 			}
@@ -82,24 +93,27 @@ func addTruncatedFaceVertices(face *Face, edgeVertices map[string]*Vertex) []*Ve
 	return newFaceVertices
 }
 
-// processTruncatedFaces processes all faces to create truncated versions
-func processTruncatedFaces(p *Polyhedron, trunc *Polyhedron, edgeVertices map[string]*Vertex) {
+// processTruncatedFaces processes all faces to create truncated versions.
+func processTruncatedFaces(p, trunc *Polyhedron, edgeVertices map[string]*Vertex) {
 	for _, face := range p.Faces {
 		newFaceVertices := addTruncatedFaceVertices(face, edgeVertices)
+
 		if len(newFaceVertices) >= 3 {
 			trunc.AddFace(newFaceVertices)
 		}
 	}
 }
 
-// processTruncatedVertexFaces processes vertices to create new faces at truncation sites
-func processTruncatedVertexFaces(p *Polyhedron, trunc *Polyhedron, edgeVertices map[string]*Vertex) {
+// processTruncatedVertexFaces processes vertices to create new faces at truncation sites.
+func processTruncatedVertexFaces(p, trunc *Polyhedron, edgeVertices map[string]*Vertex) {
 	for _, vertex := range p.Vertices {
 		vertexFaceVertices := allocateVertexSlice(vertex.Degree())
 
-		orderedEdges := orderEdgesAroundVertex(vertex)
+		orderedEdges := OrderEdgesAroundVertex(vertex)
+
 		for _, edge := range orderedEdges {
-			key := edgeVertexKey(edge.ID, vertex.ID)
+			key := EdgeVertexKey(edge.ID, vertex.ID)
+
 			if v, ok := edgeVertices[key]; ok {
 				vertexFaceVertices = append(vertexFaceVertices, v)
 			}
@@ -120,7 +134,7 @@ func (t TruncateOp) Apply(p *Polyhedron) *Polyhedron {
 	return trunc
 }
 
-func edgeVertexKey(edgeID, vertexID int) string {
+func EdgeVertexKey(edgeID, vertexID int) string {
 	return fmt.Sprintf("%d_%d", edgeID, vertexID)
 }
 

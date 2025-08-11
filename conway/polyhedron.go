@@ -1,13 +1,13 @@
-// Package conway implements Conway polyhedron notation, a mathematical system for
+// Package conway implements Conway polyhedron notation, a mathematical system for.
 // describing complex polyhedra through systematic transformations of simple seed shapes.
 //
-// Conway notation provides operations like dual (d), ambo (a), truncate (t), kis (k),
-// and join (j) that can be applied to the five Platonic solids to generate a wide
-// variety of interesting polyhedra. Operations can be chained together using a simple
+// Conway notation provides operations like dual (d), ambo (a), truncate (t), kis (k),.
+// and join (j) that can be applied to the five Platonic solids to generate a wide.
+// variety of interesting polyhedra. Operations can be chained together using a simple.
 // text notation, for example "dtC" creates the dual of a truncated cube.
 //
-// The library uses a half-edge data structure for efficient polyhedron representation
-// and includes comprehensive validation, caching of computed properties, and performance
+// The library uses a half-edge data structure for efficient polyhedron representation.
+// and includes comprehensive validation, caching of computed properties, and performance.
 // optimizations for large polyhedra.
 //
 // Example usage:
@@ -15,11 +15,11 @@
 //	// Create a truncated icosahedron (soccer ball)
 //	soccerBall, err := conway.Parse("tI")
 //
-//	// Create operations manually
+//	// Create operations manually.
 //	cube := conway.Cube()
 //	dual := conway.Dual(cube)
 //
-//	// Validate the result
+//	// Validate the result.
 //	if err := soccerBall.ValidateComplete(); err != nil {
 //	    log.Fatal(err)
 //	}
@@ -33,12 +33,12 @@ import (
 )
 
 const (
-	// halfScale is used for calculating midpoints
+	// halfScale is used for calculating midpoints.
 	halfScale = 0.5
 )
 
 // Vector3 represents a 3D vector with X, Y, and Z components.
-// It provides basic vector operations including addition, subtraction,
+// It provides basic vector operations including addition, subtraction,.
 // scaling, dot product, cross product, normalization, and distance calculation.
 type Vector3 struct {
 	X, Y, Z float64
@@ -82,12 +82,13 @@ func (v Vector3) Length() float64 {
 // Normalize returns a unit vector in the same direction as v.
 // If v has zero length, it returns v unchanged.
 func (v Vector3) Normalize() Vector3 {
-	l := v.Length()
-	if l == 0 {
+	length := v.Length()
+
+	if length == 0 {
 		return v
 	}
 
-	return v.Scale(1.0 / l)
+	return v.Scale(1.0 / length)
 }
 
 // Distance returns the Euclidean distance between v and other.
@@ -96,7 +97,7 @@ func (v Vector3) Distance(other Vector3) float64 {
 }
 
 // Vertex represents a point in 3D space with connectivity information.
-// Each vertex maintains references to all edges and faces that contain it,
+// Each vertex maintains references to all edges and faces that contain it,.
 // enabling efficient traversal of the polyhedron's topology.
 type Vertex struct {
 	ID       int           // Unique identifier within the polyhedron
@@ -159,6 +160,7 @@ func (e *Edge) OtherVertex(v *Vertex) *Vertex {
 	if e.V1.ID == v.ID {
 		return e.V2
 	}
+
 	if e.V2.ID == v.ID {
 		return e.V1
 	}
@@ -167,7 +169,7 @@ func (e *Edge) OtherVertex(v *Vertex) *Vertex {
 }
 
 // Face represents a polygonal face of a polyhedron.
-// Faces are defined by an ordered list of vertices (counter-clockwise when viewed
+// Faces are defined by an ordered list of vertices (counter-clockwise when viewed.
 // from outside the polyhedron) and maintain references to their bounding edges.
 // Computed properties like normal, centroid, and area are cached for performance.
 type Face struct {
@@ -175,7 +177,7 @@ type Face struct {
 	Vertices []*Vertex // Ordered vertices forming the face boundary (CCW from outside)
 	Edges    []*Edge   // Edges bounding the face
 
-	// Cached computed properties
+	// Cached computed properties.
 	cachedNormal   *Vector3     // Cached face normal vector
 	cachedCentroid *Vector3     // Cached face centroid
 	cachedArea     *float64     // Cached face area
@@ -184,9 +186,13 @@ type Face struct {
 
 func NewFace(id int, vertices []*Vertex) *Face {
 	return &Face{
-		ID:       id,
-		Vertices: vertices,
-		Edges:    allocateEdgeSlice(len(vertices)), // Pre-allocate with expected capacity
+		ID:             id,
+		Vertices:       vertices,
+		Edges:          allocateEdgeSlice(len(vertices)), // Pre-allocate with expected capacity
+		cachedNormal:   nil,
+		cachedCentroid: nil,
+		cachedArea:     nil,
+		mu:             sync.RWMutex{},
 	}
 }
 
@@ -202,24 +208,27 @@ func (f *Face) Centroid() Vector3 {
 	}
 	f.mu.RUnlock()
 
-	// Need write lock to update cache
+	// Need write lock to update cache.
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	// Double-check pattern: check again under write lock
+	// Double-check pattern: check again under write lock.
 	if f.cachedCentroid != nil {
 		return *f.cachedCentroid
 	}
 
 	if len(f.Vertices) == 0 {
-		return Vector3{}
+		return Vector3{X: 0, Y: 0, Z: 0}
 	}
 
-	sum := Vector3{}
+	sum := Vector3{X: 0, Y: 0, Z: 0}
+
 	for _, v := range f.Vertices {
 		sum = sum.Add(v.Position)
 	}
+
 	centroid := sum.Scale(1.0 / float64(len(f.Vertices)))
+
 	f.cachedCentroid = &centroid
 
 	return centroid
@@ -233,25 +242,27 @@ func (f *Face) Normal() Vector3 {
 	}
 	f.mu.RUnlock()
 
-	// Need write lock to update cache
+	// Need write lock to update cache.
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	// Double-check pattern: check again under write lock
+	// Double-check pattern: check again under write lock.
 	if f.cachedNormal != nil {
 		return *f.cachedNormal
 	}
 
 	if len(f.Vertices) < 3 {
-		return Vector3{}
+		return Vector3{X: 0, Y: 0, Z: 0}
 	}
 
-	// Use robust Newell's method for normal calculation
-	normal, err := calculateFaceNormal(f.Vertices)
+	// Use robust Newell's method for normal calculation.
+	normal, err := CalculateFaceNormal(f.Vertices)
 	if err != nil {
-		// Fallback to simple cross product for degenerate cases
+		// Fallback to simple cross product for degenerate cases.
 		v1 := f.Vertices[1].Position.Sub(f.Vertices[0].Position)
+
 		v2 := f.Vertices[2].Position.Sub(f.Vertices[0].Position)
+
 		normal = v1.Cross(v2).Normalize()
 	}
 
@@ -268,11 +279,11 @@ func (f *Face) Area() float64 {
 	}
 	f.mu.RUnlock()
 
-	// Need write lock to update cache
+	// Need write lock to update cache.
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	// Double-check pattern: check again under write lock
+	// Double-check pattern: check again under write lock.
 	if f.cachedArea != nil {
 		return *f.cachedArea
 	}
@@ -282,11 +293,15 @@ func (f *Face) Area() float64 {
 	}
 
 	area := 0.0
+
 	for i := 1; i < len(f.Vertices)-1; i++ {
 		v1 := f.Vertices[i].Position.Sub(f.Vertices[0].Position)
+
 		v2 := f.Vertices[i+1].Position.Sub(f.Vertices[0].Position)
+
 		area += v1.Cross(v2).Length() * halfScale
 	}
+
 	f.cachedArea = &area
 
 	return area
@@ -294,7 +309,7 @@ func (f *Face) Area() float64 {
 
 // Polyhedron represents a 3D polyhedron using a half-edge data structure.
 // It maintains maps of vertices, edges, and faces with their connectivity information.
-// The structure includes optimizations like O(1) edge lookup and caching of computed
+// The structure includes optimizations like O(1) edge lookup and caching of computed.
 // properties for better performance with large polyhedra.
 //
 // All valid polyhedra satisfy Euler's formula: V - E + F = 2, where V is the number
@@ -310,7 +325,7 @@ type Polyhedron struct {
 	edgeLookup *EdgeLookup     // O(1) edge lookup by vertex pair
 	mu         sync.RWMutex    // Read-write mutex for thread safety
 
-	// Cached computed properties
+	// Cached computed properties.
 	cachedCentroid *Vector3 // Cached polyhedron centroid
 }
 
@@ -318,12 +333,14 @@ type Polyhedron struct {
 // All internal maps and the edge lookup structure are initialized.
 func NewPolyhedron(name string) *Polyhedron {
 	return &Polyhedron{
-		Name:       name,
-		Vertices:   make(map[int]*Vertex),
-		Edges:      make(map[int]*Edge),
-		Faces:      make(map[int]*Face),
-		nextID:     0,
-		edgeLookup: NewEdgeLookup(),
+		Name:           name,
+		Vertices:       make(map[int]*Vertex),
+		Edges:          make(map[int]*Edge),
+		Faces:          make(map[int]*Face),
+		nextID:         0,
+		edgeLookup:     NewEdgeLookup(),
+		mu:             sync.RWMutex{},
+		cachedCentroid: nil,
 	}
 }
 
@@ -339,6 +356,7 @@ func (p *Polyhedron) AddVertex(pos Vector3) *Vertex {
 	defer p.mu.Unlock()
 
 	v := NewVertex(p.getNextID(), pos)
+
 	p.Vertices[v.ID] = v
 	p.invalidateCache() // Invalidate cached centroid when vertices change
 
@@ -355,14 +373,15 @@ func (p *Polyhedron) AddEdge(v1, v2 *Vertex) *Edge {
 	return p.addEdgeUnsafe(v1, v2)
 }
 
-// addEdgeUnsafe is the internal implementation of AddEdge without locking
+// addEdgeUnsafe is the internal implementation of AddEdge without locking.
 func (p *Polyhedron) addEdgeUnsafe(v1, v2 *Vertex) *Edge {
-	// Check if edge already exists using O(1) lookup
+	// Check if edge already exists using O(1) lookup.
 	if existing := p.edgeLookup.Find(v1.ID, v2.ID); existing != nil {
 		return existing
 	}
 
 	e := NewEdge(p.getNextID(), v1, v2)
+
 	p.Edges[e.ID] = e
 	p.edgeLookup.Add(e)
 	v1.Edges[e.ID] = e
@@ -379,20 +398,24 @@ func (p *Polyhedron) AddFace(vertices []*Vertex) *Face {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	// Ensure proper winding order if we have a meaningful polyhedron center
+	// Ensure proper winding order if we have a meaningful polyhedron center.
 	if len(p.Vertices) > 3 {
 		center := p.calculateCentroidUnsafe()
-		vertices = ensureCounterClockwise(vertices, center)
+
+		vertices = EnsureCounterClockwise(vertices, center)
 	}
 
 	f := NewFace(p.getNextID(), vertices)
+
 	p.Faces[f.ID] = f
 
 	for i := 0; i < len(vertices); i++ {
 		v1 := vertices[i]
+
 		v2 := vertices[(i+1)%len(vertices)]
 
 		e := p.addEdgeUnsafe(v1, v2)
+
 		f.Edges = append(f.Edges, e)
 		e.Faces[f.ID] = f
 
@@ -402,12 +425,12 @@ func (p *Polyhedron) AddFace(vertices []*Vertex) *Face {
 	return f
 }
 
-// invalidateCache invalidates all cached properties
+// invalidateCache invalidates all cached properties.
 func (p *Polyhedron) invalidateCache() {
 	p.cachedCentroid = nil
 }
 
-// invalidateFaceCache invalidates cached properties for a face
+// invalidateFaceCache invalidates cached properties for a face.
 func (f *Face) invalidateFaceCache() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -424,14 +447,14 @@ func (p *Polyhedron) RemoveVertex(v *Vertex) {
 	p.removeVertexUnsafe(v)
 }
 
-// removeVertexUnsafe is the internal implementation without locking
+// removeVertexUnsafe is the internal implementation without locking.
 func (p *Polyhedron) removeVertexUnsafe(v *Vertex) {
 	// Remove all associated edges (which will also clean up faces)
 	for _, e := range v.Edges {
 		p.removeEdgeUnsafe(e)
 	}
 
-	// Remove all associated faces
+	// Remove all associated faces.
 	for _, f := range v.Faces {
 		p.removeFaceUnsafe(f)
 	}
@@ -448,13 +471,13 @@ func (p *Polyhedron) RemoveEdge(e *Edge) {
 	p.removeEdgeUnsafe(e)
 }
 
-// removeEdgeUnsafe is the internal implementation without locking
+// removeEdgeUnsafe is the internal implementation without locking.
 func (p *Polyhedron) removeEdgeUnsafe(e *Edge) {
-	// Remove from vertices
+	// Remove from vertices.
 	delete(e.V1.Edges, e.ID)
 	delete(e.V2.Edges, e.ID)
 
-	// Remove from faces
+	// Remove from faces.
 	for _, f := range e.Faces {
 		for i, edge := range f.Edges {
 			if edge.ID == e.ID {
@@ -462,11 +485,11 @@ func (p *Polyhedron) removeEdgeUnsafe(e *Edge) {
 				break
 			}
 		}
-		// Also remove face reference from edge
+		// Also remove face reference from edge.
 		delete(e.Faces, f.ID)
 	}
 
-	// Remove from lookup table - critical for preventing memory leaks
+	// Remove from lookup table - critical for preventing memory leaks.
 	p.edgeLookup.Remove(e)
 	delete(p.Edges, e.ID)
 }
@@ -479,14 +502,14 @@ func (p *Polyhedron) RemoveFace(f *Face) {
 	p.removeFaceUnsafe(f)
 }
 
-// removeFaceUnsafe is the internal implementation without locking
+// removeFaceUnsafe is the internal implementation without locking.
 func (p *Polyhedron) removeFaceUnsafe(f *Face) {
-	// Remove face references from vertices
+	// Remove face references from vertices.
 	for _, v := range f.Vertices {
 		delete(v.Faces, f.ID)
 	}
 
-	// Remove face references from edges
+	// Remove face references from edges.
 	for _, e := range f.Edges {
 		delete(e.Faces, f.ID)
 	}
@@ -502,9 +525,9 @@ func (p *Polyhedron) EulerCharacteristic() int {
 
 // IsValid performs basic validation checks on the polyhedron.
 // Returns true if the polyhedron satisfies basic topological requirements:
-// - Euler characteristic equals 2
+// - Euler characteristic equals 2.
 // - All vertices have degree >= 3
-// - All edges have 1 or 2 adjacent faces
+// - All edges have 1 or 2 adjacent faces.
 // - All faces have >= 3 vertices
 // For more comprehensive validation, use ValidateComplete().
 func (p *Polyhedron) IsValid() bool {
@@ -534,7 +557,7 @@ func (p *Polyhedron) IsValid() bool {
 }
 
 // Clone creates a deep copy of the polyhedron.
-// All vertices, edges, and faces are recreated with new IDs,
+// All vertices, edges, and faces are recreated with new IDs,.
 // but the geometric and topological structure is preserved.
 // Thread-safe for concurrent access.
 func (p *Polyhedron) Clone() *Polyhedron {
@@ -543,19 +566,23 @@ func (p *Polyhedron) Clone() *Polyhedron {
 
 	newP := NewPolyhedron(p.Name)
 
-	// Pre-allocate vertex map with known size
+	// Pre-allocate vertex map with known size.
 	vertexMap := make(map[int]*Vertex, len(p.Vertices))
+
 	for _, v := range p.Vertices {
 		newV := newP.AddVertex(v.Position)
+
 		vertexMap[v.ID] = newV
 	}
 
 	for _, f := range p.Faces {
-		// Pre-allocate slice with exact size needed
+		// Pre-allocate slice with exact size needed.
 		newVertices := make([]*Vertex, len(f.Vertices))
+
 		for i, v := range f.Vertices {
 			newVertices[i] = vertexMap[v.ID]
 		}
+
 		newP.AddFace(newVertices)
 	}
 
@@ -570,35 +597,36 @@ func (p *Polyhedron) Centroid() Vector3 {
 	}
 	p.mu.RUnlock()
 
-	// Need write lock to update cache
+	// Need write lock to update cache.
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	return p.calculateCentroidUnsafe()
 }
 
-// calculateCentroidUnsafe is the internal implementation without locking
+// calculateCentroidUnsafe is the internal implementation without locking.
 func (p *Polyhedron) calculateCentroidUnsafe() Vector3 {
-	// Double-check pattern: check again under write lock
+	// Double-check pattern: check again under write lock.
 	if p.cachedCentroid != nil {
 		return *p.cachedCentroid
 	}
 
 	if len(p.Vertices) == 0 {
-		return Vector3{}
+		return Vector3{X: 0, Y: 0, Z: 0}
 	}
 
-	sum := Vector3{}
+	sum := Vector3{X: 0, Y: 0, Z: 0}
 	for _, v := range p.Vertices {
 		sum = sum.Add(v.Position)
 	}
+
 	centroid := sum.Scale(1.0 / float64(len(p.Vertices)))
 	p.cachedCentroid = &centroid
 
 	return centroid
 }
 
-// Normalize centers the polyhedron at the origin and scales it so that
+// Normalize centers the polyhedron at the origin and scales it so that.
 // the furthest vertex is at unit distance from the center.
 // This is useful for consistent visualization and comparison of polyhedra.
 // All cached properties are invalidated after normalization.
@@ -610,6 +638,7 @@ func (p *Polyhedron) Normalize() {
 	}
 
 	maxDist := 0.0
+
 	for _, v := range p.Vertices {
 		dist := v.Position.Length()
 		if dist > maxDist {
@@ -624,14 +653,24 @@ func (p *Polyhedron) Normalize() {
 		}
 	}
 
-	// Invalidate all cached properties after normalization
+	// Invalidate all cached properties after normalization.
 	p.invalidateCache()
+
 	for _, f := range p.Faces {
 		f.invalidateFaceCache()
 	}
 }
 
-// Stats returns a string with basic polyhedron statistics including
+// FindEdge returns the edge between two vertices by their IDs.
+// Returns nil if no edge exists between the vertices.
+func (p *Polyhedron) FindEdge(v1ID, v2ID int) *Edge {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	return p.edgeLookup.Find(v1ID, v2ID)
+}
+
+// Stats returns a string with basic polyhedron statistics including.
 // name, vertex count (V), edge count (E), face count (F), and Euler characteristic (χ).
 func (p *Polyhedron) Stats() string {
 	return fmt.Sprintf("%s: V=%d, E=%d, F=%d, χ=%d",

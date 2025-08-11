@@ -3,21 +3,22 @@ package conway
 import "math"
 
 const (
-	// goldenRatioBase is the square root of 5 used in golden ratio calculation
+	// goldenRatioBase is the square root of 5 used in golden ratio calculation.
 	goldenRatioBase = 5
-	// goldenRatioDivisor is the divisor used in golden ratio calculation
+	// goldenRatioDivisor is the divisor used in golden ratio calculation.
 	goldenRatioDivisor = 2.0
 )
 
 func Tetrahedron() *Polyhedron {
 	p := NewPolyhedron("Tetrahedron")
 
-	a := 1.0 / math.Sqrt(3)
+	coord := 1.0 / math.Sqrt(3)
+
 	vertices := []*Vertex{
-		p.AddVertex(Vector3{a, a, a}),
-		p.AddVertex(Vector3{a, -a, -a}),
-		p.AddVertex(Vector3{-a, a, -a}),
-		p.AddVertex(Vector3{-a, -a, a}),
+		p.AddVertex(Vector3{coord, coord, coord}),
+		p.AddVertex(Vector3{coord, -coord, -coord}),
+		p.AddVertex(Vector3{-coord, coord, -coord}),
+		p.AddVertex(Vector3{-coord, -coord, coord}),
 	}
 
 	p.AddFace([]*Vertex{vertices[0], vertices[1], vertices[2]})
@@ -86,6 +87,7 @@ func Dodecahedron() *Polyhedron {
 	p := NewPolyhedron("Dodecahedron")
 
 	phi := (1.0 + math.Sqrt(goldenRatioBase)) / goldenRatioDivisor
+
 	invPhi := 1.0 / phi
 
 	vertices := []*Vertex{
@@ -190,6 +192,7 @@ func GetSeed(symbol string) *Polyhedron {
 	switch symbol {
 	case "T":
 		return Tetrahedron()
+
 	case "C":
 		return Cube()
 	case "O":
