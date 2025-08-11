@@ -186,3 +186,57 @@ func TestCompoundOperations(t *testing.T) {
 		}
 	})
 }
+
+func TestOperationSymbols(t *testing.T) {
+	tests := []struct {
+		name     string
+		op       Operation
+		expected string
+	}{
+		{"Ambo", AmboOp{}, "a"},
+		{"Dual", DualOp{}, "d"},
+		{"Join", JoinOp{}, "j"},
+		{"Kis", KisOp{}, "k"},
+		{"Truncate", TruncateOp{}, "t"},
+		{"Ortho", OrthoOp{}, "o"},
+		{"Expand", ExpandOp{}, "e"},
+		{"Gyro", GyroOp{}, "g"},
+		{"Snub", SnubOp{}, "s"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			symbol := test.op.Symbol()
+			if symbol != test.expected {
+				t.Errorf("Expected symbol %s for %s, got %s", test.expected, test.name, symbol)
+			}
+		})
+	}
+}
+
+func TestOperationNames(t *testing.T) {
+	tests := []struct {
+		name     string
+		op       Operation
+		expected string
+	}{
+		{"Ambo", AmboOp{}, "ambo"},
+		{"Dual", DualOp{}, "dual"},
+		{"Join", JoinOp{}, "join"},
+		{"Kis", KisOp{}, "kis"},
+		{"Truncate", TruncateOp{}, "truncate"},
+		{"Ortho", OrthoOp{}, "ortho"},
+		{"Expand", ExpandOp{}, "expand"},
+		{"Gyro", GyroOp{}, "gyro"},
+		{"Snub", SnubOp{}, "snub"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			name := test.op.Name()
+			if name != test.expected {
+				t.Errorf("Expected name %s for operation, got %s", test.expected, name)
+			}
+		})
+	}
+}

@@ -41,6 +41,7 @@ func (k KisOp) Apply(p *Polyhedron) *Polyhedron {
 	}
 
 	kis.Normalize()
+
 	return kis
 }
 

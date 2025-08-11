@@ -13,6 +13,7 @@ func (j JoinOp) Name() string {
 func (j JoinOp) Apply(p *Polyhedron) *Polyhedron {
 	dual := Dual(p)
 	ambo := Ambo(dual)
+
 	return ambo
 }
 

@@ -5,6 +5,11 @@ import (
 	"math"
 )
 
+const (
+	// minFaceVertices is the minimum number of vertices required for a valid face
+	minFaceVertices = 4
+)
+
 // ValidationError represents an error in polyhedron validation
 type ValidationError struct {
 	Type    string
@@ -33,6 +38,7 @@ func (p *Polyhedron) ValidateManifold() error {
 				// For closed polyhedra, all edges should have exactly 2 faces
 				continue
 			}
+
 			return ValidationError{
 				Type:    "Manifold",
 				Message: fmt.Sprintf("Edge %d has %d faces (expected 2)", edge.ID, faceCount),
@@ -96,7 +102,7 @@ func (p *Polyhedron) ValidatePlanarity() error {
 
 // validateFacePlanarity checks if a specific face is planar within tolerance
 func (p *Polyhedron) validateFacePlanarity(face *Face, tolerance float64) error {
-	if len(face.Vertices) < 4 {
+	if len(face.Vertices) < minFaceVertices {
 		return nil // Triangular faces are always planar
 	}
 
@@ -117,8 +123,9 @@ func (p *Polyhedron) validateFacePlanarity(face *Face, tolerance float64) error 
 		dist := math.Abs(normal.Dot(vi.Sub(v0)))
 		if dist > tolerance {
 			return ValidationError{
-				Type:    "Planarity",
-				Message: fmt.Sprintf("Face %d vertex %d is %.2e units from face plane (tolerance: %.2e)", face.ID, i, dist, tolerance),
+				Type: "Planarity",
+				Message: fmt.Sprintf("Face %d vertex %d is %.2e units from face plane (tolerance: %.2e)",
+					face.ID, i, dist, tolerance),
 			}
 		}
 	}

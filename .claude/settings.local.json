@@ -13,7 +13,16 @@
       "Bash(mkdir:*)",
       "Bash(go fmt:*)",
       "Bash(go vet:*)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(dir:*)",
+      "Bash(test:*)",
+      "Bash(staticcheck:*)",
+      "Bash(golint:*)",
+      "Bash(golangci-lint run:*)",
+      "Bash(go:*)",
+      "Bash(make pre-commit:*)",
+      "Bash(make fmt:*)",
+      "Bash(make:*)"
     ],
     "deny": []
   }

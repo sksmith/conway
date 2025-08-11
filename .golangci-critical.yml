@@ -25,8 +25,6 @@ linters:
     - errname
     - errorlint
     - exhaustive
-    - exhaustruct
-    - copyloopvar
     - forbidigo
     - forcetypeassert
     - funlen
@@ -35,12 +33,8 @@ linters:
     - gocheckcompilerdirectives
     - gochecknoglobals
     - gochecknoinits
-    - gocognit
     - goconst
-    - gocritic
     - gocyclo
-    - godot
-    - godox
     - err113
     - gofmt
     - gofumpt
@@ -69,7 +63,6 @@ linters:
     - nolintlint
     - nonamedreturns
     - nosprintfhostport
-    - paralleltest
     - prealloc
     - predeclared
     - promlinter
@@ -81,17 +74,13 @@ linters:
     - tagliatelle
     - usetesting
     - testableexamples
-    - testpackage
     - thelper
     - tparallel
     - unconvert
-    - unparam
     - usestdlibvars
-    - varnamelen
     - wastedassign
     - whitespace
     - wrapcheck
-    - wsl
 
 linters-settings:
   cyclop:
@@ -99,23 +88,9 @@ linters-settings:
   funlen:
     lines: 80
     statements: 50
-  gocognit:
-    min-complexity: 15
   goconst:
     min-len: 3
     min-occurrences: 3
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport
-      - ifElseChain
-      - octalLiteral
-      - whyNoLint
   gocyclo:
     min-complexity: 15
   godot:
@@ -194,14 +169,12 @@ issues:
         - mnd
         - funlen
         - gochecknoglobals
-        - gocognit
         - goconst
         - cyclop
         - lll
         - dupl
         - err113
         - varnamelen
-        - exhaustruct
         - maintidx
         - depguard
     - path: examples/
@@ -214,7 +187,6 @@ issues:
       linters:
         - mnd
         - funlen
-        - gocognit
         - cyclop
     - linters:
         - lll

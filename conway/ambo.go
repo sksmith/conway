@@ -40,7 +40,74 @@ func (a AmboOp) Apply(p *Polyhedron) *Polyhedron {
 	}
 
 	ambo.Normalize()
+
 	return ambo
+}
+
+// convertEdgesToSlice converts vertex edges map to slice
+func convertEdgesToSlice(v *Vertex) []*Edge {
+	edges := make([]*Edge, 0, len(v.Edges))
+	for _, e := range v.Edges {
+		edges = append(edges, e)
+	}
+
+	return edges
+}
+
+// faceContainsEdge checks if a face contains the given edge
+func faceContainsEdge(face *Face, edgeID int) bool {
+	for _, e := range face.Edges {
+		if e.ID == edgeID {
+			return true
+		}
+	}
+
+	return false
+}
+
+// edgeConnectsToVertex checks if an edge connects to the given vertex
+func edgeConnectsToVertex(edge *Edge, vertexID int) bool {
+	return edge.V1.ID == vertexID || edge.V2.ID == vertexID
+}
+
+// findNextEdgeInFace finds the next unvisited edge in a face that connects to vertex
+func findNextEdgeInFace(face *Face, currentEdgeID, vertexID int, visited map[int]bool) *Edge {
+	for _, e := range face.Edges {
+		if e.ID == currentEdgeID || visited[e.ID] {
+			continue
+		}
+		if edgeConnectsToVertex(e, vertexID) {
+			return e
+		}
+	}
+
+	return nil
+}
+
+// findNextEdgeInFaces searches through faces to find the next edge to add
+func findNextEdgeInFaces(v *Vertex, currentEdge *Edge, visited map[int]bool) *Edge {
+	for _, face := range v.Faces {
+		if !faceContainsEdge(face, currentEdge.ID) {
+			continue
+		}
+
+		if nextEdge := findNextEdgeInFace(face, currentEdge.ID, v.ID, visited); nextEdge != nil {
+			return nextEdge
+		}
+	}
+
+	return nil
+}
+
+// findNextUnvisitedEdge finds any unvisited edge (fallback)
+func findNextUnvisitedEdge(edges []*Edge, visited map[int]bool) *Edge {
+	for _, e := range edges {
+		if !visited[e.ID] {
+			return e
+		}
+	}
+
+	return nil
 }
 
 func orderEdgesAroundVertex(v *Vertex) []*Edge {
@@ -48,11 +115,7 @@ func orderEdgesAroundVertex(v *Vertex) []*Edge {
 		return []*Edge{}
 	}
 
-	edges := make([]*Edge, 0, len(v.Edges))
-	for _, e := range v.Edges {
-		edges = append(edges, e)
-	}
-
+	edges := convertEdgesToSlice(v)
 	if len(edges) <= 2 {
 		return edges
 	}
@@ -65,49 +128,20 @@ func orderEdgesAroundVertex(v *Vertex) []*Edge {
 	visited[current.ID] = true
 
 	for len(ordered) < len(edges) {
-		found := false
+		// Try to find next edge through face connections
+		nextEdge := findNextEdgeInFaces(v, current, visited)
 
-		for _, face := range v.Faces {
-			hasCurrentEdge := false
-			for _, e := range face.Edges {
-				if e.ID == current.ID {
-					hasCurrentEdge = true
-					break
-				}
-			}
-
-			if !hasCurrentEdge {
-				continue
-			}
-
-			for _, e := range face.Edges {
-				if e.ID == current.ID || visited[e.ID] {
-					continue
-				}
-
-				if e.V1.ID == v.ID || e.V2.ID == v.ID {
-					ordered = append(ordered, e)
-					visited[e.ID] = true
-					current = e
-					found = true
-					break
-				}
-			}
-
-			if found {
-				break
-			}
+		// If no face-connected edge found, use fallback
+		if nextEdge == nil {
+			nextEdge = findNextUnvisitedEdge(edges, visited)
 		}
 
-		if !found {
-			for _, e := range edges {
-				if !visited[e.ID] {
-					ordered = append(ordered, e)
-					visited[e.ID] = true
-					current = e
-					break
-				}
-			}
+		if nextEdge != nil {
+			ordered = append(ordered, nextEdge)
+			visited[nextEdge.ID] = true
+			current = nextEdge
+		} else {
+			break // Safety break in case we can't find any more edges
 		}
 	}
 

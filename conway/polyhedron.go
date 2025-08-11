@@ -32,6 +32,11 @@ import (
 	"sync/atomic"
 )
 
+const (
+	// halfScale is used for calculating midpoints
+	halfScale = 0.5
+)
+
 // Vector3 represents a 3D vector with X, Y, and Z components.
 // It provides basic vector operations including addition, subtraction,
 // scaling, dot product, cross product, normalization, and distance calculation.
@@ -81,6 +86,7 @@ func (v Vector3) Normalize() Vector3 {
 	if l == 0 {
 		return v
 	}
+
 	return v.Scale(1.0 / l)
 }
 
@@ -139,7 +145,7 @@ func NewEdge(id int, v1, v2 *Vertex) *Edge {
 
 // Midpoint returns the point halfway between the edge's endpoints.
 func (e *Edge) Midpoint() Vector3 {
-	return e.V1.Position.Add(e.V2.Position).Scale(0.5)
+	return e.V1.Position.Add(e.V2.Position).Scale(halfScale)
 }
 
 // Length returns the Euclidean distance between the edge's endpoints.
@@ -156,6 +162,7 @@ func (e *Edge) OtherVertex(v *Vertex) *Vertex {
 	if e.V2.ID == v.ID {
 		return e.V1
 	}
+
 	return nil
 }
 
@@ -169,9 +176,10 @@ type Face struct {
 	Edges    []*Edge   // Edges bounding the face
 
 	// Cached computed properties
-	cachedNormal   *Vector3 // Cached face normal vector
-	cachedCentroid *Vector3 // Cached face centroid
-	cachedArea     *float64 // Cached face area
+	cachedNormal   *Vector3     // Cached face normal vector
+	cachedCentroid *Vector3     // Cached face centroid
+	cachedArea     *float64     // Cached face area
+	mu             sync.RWMutex // Mutex for thread-safe access to cached properties
 }
 
 func NewFace(id int, vertices []*Vertex) *Face {
@@ -187,6 +195,18 @@ func (f *Face) Degree() int {
 }
 
 func (f *Face) Centroid() Vector3 {
+	f.mu.RLock()
+	if f.cachedCentroid != nil {
+		defer f.mu.RUnlock()
+		return *f.cachedCentroid
+	}
+	f.mu.RUnlock()
+
+	// Need write lock to update cache
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// Double-check pattern: check again under write lock
 	if f.cachedCentroid != nil {
 		return *f.cachedCentroid
 	}
@@ -201,10 +221,23 @@ func (f *Face) Centroid() Vector3 {
 	}
 	centroid := sum.Scale(1.0 / float64(len(f.Vertices)))
 	f.cachedCentroid = &centroid
+
 	return centroid
 }
 
 func (f *Face) Normal() Vector3 {
+	f.mu.RLock()
+	if f.cachedNormal != nil {
+		defer f.mu.RUnlock()
+		return *f.cachedNormal
+	}
+	f.mu.RUnlock()
+
+	// Need write lock to update cache
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// Double-check pattern: check again under write lock
 	if f.cachedNormal != nil {
 		return *f.cachedNormal
 	}
@@ -223,10 +256,23 @@ func (f *Face) Normal() Vector3 {
 	}
 
 	f.cachedNormal = &normal
+
 	return normal
 }
 
 func (f *Face) Area() float64 {
+	f.mu.RLock()
+	if f.cachedArea != nil {
+		defer f.mu.RUnlock()
+		return *f.cachedArea
+	}
+	f.mu.RUnlock()
+
+	// Need write lock to update cache
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	// Double-check pattern: check again under write lock
 	if f.cachedArea != nil {
 		return *f.cachedArea
 	}
@@ -239,9 +285,10 @@ func (f *Face) Area() float64 {
 	for i := 1; i < len(f.Vertices)-1; i++ {
 		v1 := f.Vertices[i].Position.Sub(f.Vertices[0].Position)
 		v2 := f.Vertices[i+1].Position.Sub(f.Vertices[0].Position)
-		area += v1.Cross(v2).Length() * 0.5
+		area += v1.Cross(v2).Length() * halfScale
 	}
 	f.cachedArea = &area
+
 	return area
 }
 
@@ -294,6 +341,7 @@ func (p *Polyhedron) AddVertex(pos Vector3) *Vertex {
 	v := NewVertex(p.getNextID(), pos)
 	p.Vertices[v.ID] = v
 	p.invalidateCache() // Invalidate cached centroid when vertices change
+
 	return v
 }
 
@@ -303,6 +351,7 @@ func (p *Polyhedron) AddVertex(pos Vector3) *Vertex {
 func (p *Polyhedron) AddEdge(v1, v2 *Vertex) *Edge {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+
 	return p.addEdgeUnsafe(v1, v2)
 }
 
@@ -318,6 +367,7 @@ func (p *Polyhedron) addEdgeUnsafe(v1, v2 *Vertex) *Edge {
 	p.edgeLookup.Add(e)
 	v1.Edges[e.ID] = e
 	v2.Edges[e.ID] = e
+
 	return e
 }
 
@@ -359,6 +409,8 @@ func (p *Polyhedron) invalidateCache() {
 
 // invalidateFaceCache invalidates cached properties for a face
 func (f *Face) invalidateFaceCache() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.cachedNormal = nil
 	f.cachedCentroid = nil
 	f.cachedArea = nil
@@ -512,12 +564,22 @@ func (p *Polyhedron) Clone() *Polyhedron {
 
 func (p *Polyhedron) Centroid() Vector3 {
 	p.mu.RLock()
-	defer p.mu.RUnlock()
+	if p.cachedCentroid != nil {
+		defer p.mu.RUnlock()
+		return *p.cachedCentroid
+	}
+	p.mu.RUnlock()
+
+	// Need write lock to update cache
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	return p.calculateCentroidUnsafe()
 }
 
 // calculateCentroidUnsafe is the internal implementation without locking
 func (p *Polyhedron) calculateCentroidUnsafe() Vector3 {
+	// Double-check pattern: check again under write lock
 	if p.cachedCentroid != nil {
 		return *p.cachedCentroid
 	}
@@ -532,6 +594,7 @@ func (p *Polyhedron) calculateCentroidUnsafe() Vector3 {
 	}
 	centroid := sum.Scale(1.0 / float64(len(p.Vertices)))
 	p.cachedCentroid = &centroid
+
 	return centroid
 }
 

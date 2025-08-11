@@ -45,7 +45,57 @@ func (d DualOp) Apply(p *Polyhedron) *Polyhedron {
 	}
 
 	dual.Normalize()
+
 	return dual
+}
+
+// convertFacesToSlice converts vertex faces map to slice
+func convertFacesToSlice(v *Vertex) []*Face {
+	faces := make([]*Face, 0, len(v.Faces))
+	for _, f := range v.Faces {
+		faces = append(faces, f)
+	}
+
+	return faces
+}
+
+// facesShareEdge checks if two faces share an edge
+func facesShareEdge(face1, face2 *Face) bool {
+	for _, e := range face1.Edges {
+		if findEdgeIndex(face2, e) >= 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
+// findNextFaceInEdges searches through vertex edges to find the next adjacent face
+func findNextFaceInEdges(v *Vertex, currentFace *Face, visited map[int]bool) *Face {
+	for _, edge := range v.Edges {
+		for _, face := range edge.Faces {
+			if face.ID == currentFace.ID || visited[face.ID] {
+				continue
+			}
+
+			if facesShareEdge(currentFace, face) {
+				return face
+			}
+		}
+	}
+
+	return nil
+}
+
+// findNextUnvisitedFace finds any unvisited face (fallback)
+func findNextUnvisitedFace(faces []*Face, visited map[int]bool) *Face {
+	for _, f := range faces {
+		if !visited[f.ID] {
+			return f
+		}
+	}
+
+	return nil
 }
 
 func orderFacesAroundVertex(v *Vertex) []*Face {
@@ -53,11 +103,7 @@ func orderFacesAroundVertex(v *Vertex) []*Face {
 		return []*Face{}
 	}
 
-	faces := make([]*Face, 0, len(v.Faces))
-	for _, f := range v.Faces {
-		faces = append(faces, f)
-	}
-
+	faces := convertFacesToSlice(v)
 	if len(faces) <= 2 {
 		return faces
 	}
@@ -70,48 +116,20 @@ func orderFacesAroundVertex(v *Vertex) []*Face {
 	visited[current.ID] = true
 
 	for len(ordered) < len(faces) {
-		found := false
-		for _, edge := range v.Edges {
-			for _, face := range edge.Faces {
-				if face.ID == current.ID {
-					continue
-				}
+		// Try to find next face through edge connections
+		nextFace := findNextFaceInEdges(v, current, visited)
 
-				if visited[face.ID] {
-					continue
-				}
-
-				hasSharedEdge := false
-				for _, e := range current.Edges {
-					idx := findEdgeIndex(face, e)
-					if idx >= 0 {
-						hasSharedEdge = true
-						break
-					}
-				}
-
-				if hasSharedEdge {
-					ordered = append(ordered, face)
-					visited[face.ID] = true
-					current = face
-					found = true
-					break
-				}
-			}
-			if found {
-				break
-			}
+		// If no edge-connected face found, use fallback
+		if nextFace == nil {
+			nextFace = findNextUnvisitedFace(faces, visited)
 		}
 
-		if !found {
-			for _, f := range faces {
-				if !visited[f.ID] {
-					ordered = append(ordered, f)
-					visited[f.ID] = true
-					current = f
-					break
-				}
-			}
+		if nextFace != nil {
+			ordered = append(ordered, nextFace)
+			visited[nextFace.ID] = true
+			current = nextFace
+		} else {
+			break // Safety break in case we can't find any more faces
 		}
 	}
 
@@ -124,6 +142,7 @@ func findEdgeIndex(face *Face, edge *Edge) int {
 			return i
 		}
 	}
+
 	return -1
 }
 

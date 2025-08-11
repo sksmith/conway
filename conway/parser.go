@@ -1,8 +1,17 @@
 package conway
 
 import (
+	"errors"
 	"fmt"
 	"strings"
+)
+
+// Static errors for err113 compliance
+var (
+	ErrEmptyNotation         = errors.New("empty notation string")
+	ErrNoSeedPolyhedron      = errors.New("no seed polyhedron found in notation")
+	ErrUnknownSeedPolyhedron = errors.New("unknown seed polyhedron")
+	ErrUnknownOperation      = errors.New("unknown operation")
 )
 
 type Parser struct {
@@ -30,7 +39,7 @@ func NewParser() *Parser {
 func (p *Parser) Parse(notation string) (*Polyhedron, error) {
 	notation = strings.TrimSpace(notation)
 	if notation == "" {
-		return nil, fmt.Errorf("empty notation string")
+		return nil, ErrEmptyNotation
 	}
 
 	var seed *Polyhedron
@@ -46,22 +55,26 @@ func (p *Parser) Parse(notation string) (*Polyhedron, error) {
 			}
 		}
 
-		if op, exists := p.operations[symbol]; exists {
+		op, exists := p.operations[symbol]
+		if exists {
 			operations = append(operations, op)
-		} else {
-			if seed == nil && i == len(notation)-1 {
-				seed = GetSeed(symbol)
-				if seed == nil {
-					return nil, fmt.Errorf("unknown seed polyhedron: %s", symbol)
-				}
-			} else {
-				return nil, fmt.Errorf("unknown operation: %s at position %d", symbol, i)
-			}
+			continue
 		}
+
+		if seed == nil && i == len(notation)-1 {
+			seed = GetSeed(symbol)
+			if seed == nil {
+				return nil, fmt.Errorf("%w: %s", ErrUnknownSeedPolyhedron, symbol)
+			}
+
+			continue
+		}
+
+		return nil, fmt.Errorf("%w: %s at position %d", ErrUnknownOperation, symbol, i)
 	}
 
 	if seed == nil {
-		return nil, fmt.Errorf("no seed polyhedron found in notation")
+		return nil, ErrNoSeedPolyhedron
 	}
 
 	result := seed.Clone()
@@ -83,6 +96,7 @@ func (p *Parser) GetAvailableOperations() map[string]string {
 	for symbol, op := range p.operations {
 		ops[symbol] = op.Name()
 	}
+
 	return ops
 }
 
@@ -98,6 +112,7 @@ func (p *Parser) GetAvailableSeeds() map[string]string {
 
 func Parse(notation string) (*Polyhedron, error) {
 	parser := NewParser()
+
 	return parser.Parse(notation)
 }
 
@@ -106,5 +121,6 @@ func MustParse(notation string) *Polyhedron {
 	if err != nil {
 		panic(err)
 	}
+
 	return result
 }

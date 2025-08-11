@@ -41,17 +41,21 @@ func TestParseValidNotations(t *testing.T) {
 			if test.valid {
 				if err != nil {
 					t.Errorf("Expected valid notation %s, got error: %v", test.notation, err)
+					return
 				}
 				if result == nil {
 					t.Errorf("Expected result for valid notation %s", test.notation)
+					return
 				}
-				if result != nil && !result.IsValid() {
+				if !result.IsValid() {
 					t.Errorf("Result of %s is not a valid polyhedron", test.notation)
 				}
-			} else {
-				if err == nil {
-					t.Errorf("Expected error for invalid notation %s", test.notation)
-				}
+
+				return
+			}
+
+			if err == nil {
+				t.Errorf("Expected error for invalid notation %s", test.notation)
 			}
 		})
 	}

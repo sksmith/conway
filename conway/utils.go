@@ -1,8 +1,20 @@
 package conway
 
 import (
+	"errors"
 	"fmt"
 	"math"
+)
+
+const (
+	// lengthTolerance is the minimum length threshold for vector normalization
+	lengthTolerance = 1e-12
+)
+
+// Static errors for err113 compliance
+var (
+	ErrInsufficientVertices = errors.New("insufficient vertices for normal calculation")
+	ErrDegenerateFaceNormal = errors.New("degenerate face normal")
 )
 
 // EdgeLookup provides O(1) edge lookup by vertex pair
@@ -22,6 +34,7 @@ func makeEdgeKey(v1ID, v2ID int) string {
 	if v1ID > v2ID {
 		v1ID, v2ID = v2ID, v1ID // Ensure consistent ordering
 	}
+
 	return fmt.Sprintf("%d-%d", v1ID, v2ID)
 }
 
@@ -46,7 +59,7 @@ func (el *EdgeLookup) Remove(edge *Edge) {
 // calculateFaceNormal computes face normal with proper error handling
 func calculateFaceNormal(vertices []*Vertex) (Vector3, error) {
 	if len(vertices) < 3 {
-		return Vector3{}, fmt.Errorf("insufficient vertices for normal calculation: %d", len(vertices))
+		return Vector3{}, fmt.Errorf("%w: %d", ErrInsufficientVertices, len(vertices))
 	}
 
 	// Use Newell's method for robust normal calculation
@@ -63,8 +76,8 @@ func calculateFaceNormal(vertices []*Vertex) (Vector3, error) {
 	}
 
 	length := normal.Length()
-	if length < 1e-12 {
-		return Vector3{}, fmt.Errorf("degenerate face normal (length: %e)", length)
+	if length < lengthTolerance {
+		return Vector3{}, fmt.Errorf("%w (length: %e)", ErrDegenerateFaceNormal, length)
 	}
 
 	return normal.Scale(1.0 / length), nil
@@ -98,6 +111,7 @@ func ensureCounterClockwise(vertices []*Vertex, polyhedronCenter Vector3) []*Ver
 		for i, v := range vertices {
 			reversed[len(vertices)-1-i] = v
 		}
+
 		return reversed
 	}
 
@@ -115,11 +129,6 @@ func allocateEdgeSlice(capacity int) []*Edge {
 	return make([]*Edge, 0, capacity)
 }
 
-// allocateFaceSlice pre-allocates a face slice with known capacity
-func allocateFaceSlice(capacity int) []*Face {
-	return make([]*Face, 0, capacity)
-}
-
 // GeometryStats provides statistical information about polyhedron geometry
 type GeometryStats struct {
 	MinEdgeLength float64
@@ -133,40 +142,41 @@ type GeometryStats struct {
 	}
 }
 
-// CalculateGeometryStats computes geometric statistics for a polyhedron
-func (p *Polyhedron) CalculateGeometryStats() *GeometryStats {
-	stats := &GeometryStats{}
-
-	if len(p.Edges) == 0 || len(p.Faces) == 0 {
-		return stats
+// calculateEdgeStats computes edge statistics for the polyhedron
+func calculateEdgeStats(edges map[int]*Edge) (float64, float64, float64) {
+	if len(edges) == 0 {
+		return 0, 0, 0
 	}
 
-	// Edge statistics
-	minEdgeLen := math.Inf(1)
-	maxEdgeLen := 0.0
-	totalEdgeLen := 0.0
+	minLength := math.Inf(1)
+	maxLength := 0.0
+	totalLength := 0.0
 
-	for _, edge := range p.Edges {
+	for _, edge := range edges {
 		length := edge.Length()
-		if length < minEdgeLen {
-			minEdgeLen = length
+		if length < minLength {
+			minLength = length
 		}
-		if length > maxEdgeLen {
-			maxEdgeLen = length
+		if length > maxLength {
+			maxLength = length
 		}
-		totalEdgeLen += length
+		totalLength += length
 	}
 
-	stats.MinEdgeLength = minEdgeLen
-	stats.MaxEdgeLength = maxEdgeLen
-	stats.AvgEdgeLength = totalEdgeLen / float64(len(p.Edges))
+	return minLength, maxLength, totalLength / float64(len(edges))
+}
 
-	// Face statistics
+// calculateFaceStats computes face area statistics for the polyhedron
+func calculateFaceStats(faces map[int]*Face) (float64, float64, float64) {
+	if len(faces) == 0 {
+		return 0, 0, 0
+	}
+
 	minFaceArea := math.Inf(1)
 	maxFaceArea := 0.0
 	totalFaceArea := 0.0
 
-	for _, face := range p.Faces {
+	for _, face := range faces {
 		area := face.Area()
 		if area < minFaceArea {
 			minFaceArea = area
@@ -177,41 +187,67 @@ func (p *Polyhedron) CalculateGeometryStats() *GeometryStats {
 		totalFaceArea += area
 	}
 
-	stats.MinFaceArea = minFaceArea
-	stats.MaxFaceArea = maxFaceArea
-	stats.AvgFaceArea = totalFaceArea / float64(len(p.Faces))
+	return minFaceArea, maxFaceArea, totalFaceArea / float64(len(faces))
+}
 
-	// Bounding box
-	if len(p.Vertices) > 0 {
-		first := true
-		for _, vertex := range p.Vertices {
-			pos := vertex.Position
-			if first {
-				stats.BoundingBox.Min = pos
-				stats.BoundingBox.Max = pos
-				first = false
-			} else {
-				if pos.X < stats.BoundingBox.Min.X {
-					stats.BoundingBox.Min.X = pos.X
-				}
-				if pos.Y < stats.BoundingBox.Min.Y {
-					stats.BoundingBox.Min.Y = pos.Y
-				}
-				if pos.Z < stats.BoundingBox.Min.Z {
-					stats.BoundingBox.Min.Z = pos.Z
-				}
-				if pos.X > stats.BoundingBox.Max.X {
-					stats.BoundingBox.Max.X = pos.X
-				}
-				if pos.Y > stats.BoundingBox.Max.Y {
-					stats.BoundingBox.Max.Y = pos.Y
-				}
-				if pos.Z > stats.BoundingBox.Max.Z {
-					stats.BoundingBox.Max.Z = pos.Z
-				}
-			}
+// updateBoundingBox updates min/max bounds with a new position
+func updateBoundingBox(minBound, maxBound, pos *Vector3) {
+	if pos.X < minBound.X {
+		minBound.X = pos.X
+	}
+	if pos.Y < minBound.Y {
+		minBound.Y = pos.Y
+	}
+	if pos.Z < minBound.Z {
+		minBound.Z = pos.Z
+	}
+	if pos.X > maxBound.X {
+		maxBound.X = pos.X
+	}
+	if pos.Y > maxBound.Y {
+		maxBound.Y = pos.Y
+	}
+	if pos.Z > maxBound.Z {
+		maxBound.Z = pos.Z
+	}
+}
+
+// calculateBoundingBox computes the bounding box for all vertices
+func calculateBoundingBox(vertices map[int]*Vertex) (Vector3, Vector3) {
+	if len(vertices) == 0 {
+		return Vector3{}, Vector3{}
+	}
+
+	var minBound, maxBound Vector3
+	first := true
+	for _, vertex := range vertices {
+		pos := vertex.Position
+		if first {
+			minBound = pos
+			maxBound = pos
+			first = false
+		} else {
+			updateBoundingBox(&minBound, &maxBound, &pos)
 		}
 	}
+
+	return minBound, maxBound
+}
+
+// CalculateGeometryStats computes geometric statistics for a polyhedron
+func (p *Polyhedron) CalculateGeometryStats() *GeometryStats {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	stats := &GeometryStats{}
+
+	if len(p.Edges) == 0 || len(p.Faces) == 0 {
+		return stats
+	}
+
+	stats.MinEdgeLength, stats.MaxEdgeLength, stats.AvgEdgeLength = calculateEdgeStats(p.Edges)
+	stats.MinFaceArea, stats.MaxFaceArea, stats.AvgFaceArea = calculateFaceStats(p.Faces)
+	stats.BoundingBox.Min, stats.BoundingBox.Max = calculateBoundingBox(p.Vertices)
 
 	return stats
 }
@@ -228,6 +264,9 @@ type MemoryStats struct {
 
 // CalculateMemoryStats computes memory usage statistics
 func (p *Polyhedron) CalculateMemoryStats() *MemoryStats {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
 	stats := &MemoryStats{
 		VertexCount: len(p.Vertices),
 		EdgeCount:   len(p.Edges),

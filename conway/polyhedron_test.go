@@ -169,3 +169,122 @@ func TestNormalization(t *testing.T) {
 		t.Errorf("Max distance from origin not 1.0 after normalization: %f", maxDist)
 	}
 }
+
+func TestRemoveEdge(t *testing.T) {
+	p := NewPolyhedron("test")
+	v1 := p.AddVertex(Vector3{0, 0, 0})
+	v2 := p.AddVertex(Vector3{1, 0, 0})
+	v3 := p.AddVertex(Vector3{0, 1, 0})
+
+	p.AddEdge(v1, v2)
+	e2 := p.AddEdge(v2, v3)
+	p.AddEdge(v3, v1)
+
+	if len(p.Edges) != 3 {
+		t.Errorf("Expected 3 edges, got %d", len(p.Edges))
+	}
+
+	p.RemoveEdge(e2)
+
+	if len(p.Edges) != 2 {
+		t.Errorf("Expected 2 edges after removal, got %d", len(p.Edges))
+	}
+
+	found := false
+	for _, e := range p.Edges {
+		if e == e2 {
+			found = true
+			break
+		}
+	}
+	if found {
+		t.Error("Removed edge still found in polyhedron")
+	}
+}
+
+func TestRemoveFace(t *testing.T) {
+	p := NewPolyhedron("test")
+	v1 := p.AddVertex(Vector3{0, 0, 0})
+	v2 := p.AddVertex(Vector3{1, 0, 0})
+	v3 := p.AddVertex(Vector3{0, 1, 0})
+	v4 := p.AddVertex(Vector3{0, 0, 1})
+
+	f1 := p.AddFace([]*Vertex{v1, v2, v3})
+	p.AddFace([]*Vertex{v1, v3, v4})
+
+	if len(p.Faces) != 2 {
+		t.Errorf("Expected 2 faces, got %d", len(p.Faces))
+	}
+
+	p.RemoveFace(f1)
+
+	if len(p.Faces) != 1 {
+		t.Errorf("Expected 1 face after removal, got %d", len(p.Faces))
+	}
+
+	found := false
+	for _, f := range p.Faces {
+		if f == f1 {
+			found = true
+			break
+		}
+	}
+	if found {
+		t.Error("Removed face still found in polyhedron")
+	}
+}
+
+func TestNormalizeZeroLengthVector(t *testing.T) {
+	v := Vector3{0, 0, 0}
+	normalized := v.Normalize()
+
+	if normalized.X != 0 || normalized.Y != 0 || normalized.Z != 0 {
+		t.Errorf("Zero vector normalization should return zero vector, got %v", normalized)
+	}
+}
+
+func TestEdgeOtherVertex(t *testing.T) {
+	p := NewPolyhedron("test")
+	v1 := p.AddVertex(Vector3{0, 0, 0})
+	v2 := p.AddVertex(Vector3{1, 0, 0})
+	v3 := p.AddVertex(Vector3{0, 1, 0})
+
+	edge := p.AddEdge(v1, v2)
+
+	other := edge.OtherVertex(v1)
+	if other != v2 {
+		t.Error("OtherVertex should return v2 when given v1")
+	}
+
+	other = edge.OtherVertex(v2)
+	if other != v1 {
+		t.Error("OtherVertex should return v1 when given v2")
+	}
+
+	other = edge.OtherVertex(v3)
+	if other != nil {
+		t.Error("OtherVertex should return nil for vertex not in edge")
+	}
+}
+
+func TestFaceNormalEdgeCases(t *testing.T) {
+	p := NewPolyhedron("test")
+
+	v1 := p.AddVertex(Vector3{0, 0, 0})
+	v2 := p.AddVertex(Vector3{1, 0, 0})
+
+	face := p.AddFace([]*Vertex{v1, v2})
+	normal := face.Normal()
+
+	if normal.Length() != 0 {
+		t.Error("Face with fewer than 3 vertices should have zero normal")
+	}
+
+	v3 := p.AddVertex(Vector3{0, 0, 0})
+	face2 := p.AddFace([]*Vertex{v1, v2, v3})
+	normal2 := face2.Normal()
+
+	if normal2.Length() != 0 {
+		t.Error("Degenerate face should have zero normal")
+	}
+}

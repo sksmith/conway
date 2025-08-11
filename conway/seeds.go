@@ -2,6 +2,13 @@ package conway
 
 import "math"
 
+const (
+	// goldenRatioBase is the square root of 5 used in golden ratio calculation
+	goldenRatioBase = 5
+	// goldenRatioDivisor is the divisor used in golden ratio calculation
+	goldenRatioDivisor = 2.0
+)
+
 func Tetrahedron() *Polyhedron {
 	p := NewPolyhedron("Tetrahedron")
 
@@ -19,6 +26,7 @@ func Tetrahedron() *Polyhedron {
 	p.AddFace([]*Vertex{vertices[1], vertices[2], vertices[3]})
 
 	p.Normalize()
+
 	return p
 }
 
@@ -44,6 +52,7 @@ func Cube() *Polyhedron {
 	p.AddFace([]*Vertex{vertices[1], vertices[3], vertices[7], vertices[5]})
 
 	p.Normalize()
+
 	return p
 }
 
@@ -69,13 +78,14 @@ func Octahedron() *Polyhedron {
 	p.AddFace([]*Vertex{vertices[1], vertices[2], vertices[5]})
 
 	p.Normalize()
+
 	return p
 }
 
 func Dodecahedron() *Polyhedron {
 	p := NewPolyhedron("Dodecahedron")
 
-	phi := (1.0 + math.Sqrt(5)) / 2.0
+	phi := (1.0 + math.Sqrt(goldenRatioBase)) / goldenRatioDivisor
 	invPhi := 1.0 / phi
 
 	vertices := []*Vertex{
@@ -118,13 +128,14 @@ func Dodecahedron() *Polyhedron {
 	p.AddFace([]*Vertex{vertices[6], vertices[19], vertices[7], vertices[11], vertices[10]})
 
 	p.Normalize()
+
 	return p
 }
 
 func Icosahedron() *Polyhedron {
 	p := NewPolyhedron("Icosahedron")
 
-	phi := (1.0 + math.Sqrt(5)) / 2.0
+	phi := (1.0 + math.Sqrt(goldenRatioBase)) / goldenRatioDivisor
 
 	vertices := []*Vertex{
 		p.AddVertex(Vector3{0, 1, phi}),
@@ -171,6 +182,7 @@ func Icosahedron() *Polyhedron {
 	p.AddFace([]*Vertex{vertices[10], vertices[11], vertices[7]})
 
 	p.Normalize()
+
 	return p
 }
 

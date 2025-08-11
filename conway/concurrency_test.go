@@ -1,6 +1,7 @@
 package conway
 
 import (
+	"math"
 	"sync"
 	"testing"
 	"time"
@@ -63,7 +64,7 @@ func TestConcurrentEdgeAddition(t *testing.T) {
 
 	// Launch multiple goroutines adding edges concurrently
 	for i := 0; i < numGoroutines; i++ {
-		go func(goroutineID int) {
+		go func(_ int) {
 			defer wg.Done()
 			// Each goroutine creates edges between different vertex pairs
 			for j := 0; j < len(vertices)-1; j++ {
@@ -257,6 +258,115 @@ func TestConcurrentRemovalOperations(t *testing.T) {
 	}
 	if len(cube.Faces) != initialFaces { // Faces shouldn't change in this test
 		t.Errorf("Faces changed unexpectedly: had %d, now %d", initialFaces, len(cube.Faces))
+	}
+}
+
+// TestCentroidCachingRace specifically tests for race conditions in centroid caching
+func TestCentroidCachingRace(t *testing.T) {
+	p := NewPolyhedron("CentroidRaceTest")
+
+	// Add vertices to the polyhedron
+	for i := 0; i < 10; i++ {
+		p.AddVertex(Vector3{X: float64(i), Y: float64(i), Z: float64(i)})
+	}
+
+	const numGoroutines = 50
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	// Channel to collect centroids
+	centroidChan := make(chan Vector3, numGoroutines)
+
+	// Launch many goroutines calling Centroid() simultaneously
+	// This should trigger the race condition in calculateCentroidUnsafe
+	for i := 0; i < numGoroutines; i++ {
+		go func() {
+			defer wg.Done()
+			// Call Centroid multiple times to increase race condition chances
+			for j := 0; j < 100; j++ {
+				centroid := p.Centroid()
+				if j == 0 { // Only collect the first centroid from each goroutine
+					centroidChan <- centroid
+				}
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(centroidChan)
+
+	// All centroids should be identical since we're using the same vertices
+	var firstCentroid *Vector3
+	for centroid := range centroidChan {
+		if firstCentroid == nil {
+			firstCentroid = &centroid
+		} else {
+			// Check if centroids are consistent (allowing for floating point precision)
+			if math.Abs(centroid.X-firstCentroid.X) > 1e-10 ||
+				math.Abs(centroid.Y-firstCentroid.Y) > 1e-10 ||
+				math.Abs(centroid.Z-firstCentroid.Z) > 1e-10 {
+				t.Errorf("Centroid inconsistency detected: got %v, expected %v", centroid, firstCentroid)
+			}
+		}
+	}
+}
+
+// TestBoundingBoxCalculationRace specifically tests for race conditions in bounding box calculation
+func TestBoundingBoxCalculationRace(t *testing.T) {
+	p := NewPolyhedron("BoundingBoxRaceTest")
+
+	// Start with an initial cube
+	cube := Cube()
+	for _, v := range cube.Vertices {
+		p.AddVertex(v.Position)
+	}
+
+	const numGoroutines = 20
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	// Channel to collect geometry stats
+	statsChan := make(chan *GeometryStats, numGoroutines/2)
+
+	// Launch goroutines that simultaneously add vertices and calculate geometry stats
+	for i := 0; i < numGoroutines; i++ {
+		go func(id int) {
+			defer wg.Done()
+			if id%2 == 0 {
+				// Half the goroutines add vertices
+				for j := 0; j < 50; j++ {
+					p.AddVertex(Vector3{
+						X: float64(id*50 + j),
+						Y: float64(id),
+						Z: float64(j),
+					})
+				}
+			} else {
+				// Half the goroutines calculate geometry stats (which calls calculateBoundingBox)
+				for j := 0; j < 10; j++ {
+					stats := p.CalculateGeometryStats()
+					if j == 0 { // Only collect the first stats from each reader goroutine
+						statsChan <- stats
+					}
+				}
+			}
+		}(i)
+	}
+
+	wg.Wait()
+	close(statsChan)
+
+	// Verify that all stats calculations completed without crashing
+	statsCount := 0
+	for stats := range statsChan {
+		if stats == nil {
+			t.Error("Got nil geometry stats")
+		}
+		statsCount++
+	}
+
+	if statsCount == 0 {
+		t.Error("No geometry stats were collected")
 	}
 }
 

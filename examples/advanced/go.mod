@@ -1,6 +1,8 @@
 module example-advanced
 
-go 1.20
+go 1.24
+
+toolchain go1.24.6
 
 replace github.com/sksmith/conway => ../../
 
